@@ -9,17 +9,22 @@
             </div>
             <div v-else-if="item.class==MsgClass.ADVERTISING">
                 <div class="advertising-img" v-if="item.data.img"><img v-bind:src="item.data.img"></div>
-                <div class="advertising-title">
-                    <div v-for="it in item.data.content" v-bind:key="it" @click="clickRecommend(it.title)">
-                        {{it.title}}
+                <div class="advertising-body">
+                    <div class="advertising-title">
+                        <div v-for="(it,index) in item.data.content" v-bind:key="it.title" @click="switchList(index)" v-bind:class="{'active':advertising[advertisingIndex].title==it.title}">
+                            {{it.title}}
+                        </div>
                     </div>
-                </div>
-                <div class="advertising-list">
-                    <div v-for="li in item.data.content[0].list" v-bind:key="li" @click="clickRecommend(li)">
-                        {{li}}
+                    <div class="advertising-list-left"><div>问题推荐</div></div>
+                    <div class="advertising-list-right">
+                        <div class="advertising-list">
+                            <div v-for="(li,index) in advertising[advertisingIndex].list" v-bind:key="li" @click="clickRecommend(li)">
+                                <span>{{index+1}}.{{li}}</span>
+                            </div>
+                        </div>
                     </div>
+                    <div style="clear: both"></div>
                 </div>
-
             </div>
             <div v-else>{{item.data}}</div>
         </div>
@@ -32,15 +37,17 @@
         data(){
             return{
                 MsgClass: {"SELF":"self-msg","REPLY":"reply-msg","RECOMMEND":"recommend-msg","ADVERTISING":"advertising-msg"},
-                msgList:[]
+                msgList:[],
             }
         },
         created() {
             let reply = {
                 class:this.MsgClass.ADVERTISING,
-                data:{"img":"../img/logo.png","content":[{"title":"变强",list:["人生在世","生离死别","悲欢离何"]},{"title":"赚钱",list:["如何变牛逼","baidu.com如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼"]}]},
+                data:{"img":"images/logo_rect.png","content":[{"title":"热点关注",list:["人生在世","生离死别","悲欢离何","人生在世1","生离死别2","悲欢离何1"]},{"title":"注册问题",list:["如何变牛逼","baidu.com如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼"]}]},
                 id:+new Date()
             };
+            this.advertising = reply.data.content;
+            this.advertisingIndex = 0;
             this.msgList.push(reply);
         },
         mounted() {
@@ -49,7 +56,8 @@
         methods:{
             //点击推荐
             clickRecommend:function(item){
-                this.selfSendMsg({'msg':item})
+                console.log(item)
+                this.selfSendMsg({'data':item})
             },
             //发送消息
             selfSendMsg:function (obj) {
@@ -91,6 +99,11 @@
                     }
                 },1000);
             },
+            //切换显示列表
+            switchList:function(index){
+                this.advertisingIndex = index;
+                this.$forceUpdate();
+            },
             //滚动到底部
             scrollBottom:function () {
                 let el = this.$el;
@@ -106,7 +119,7 @@
     .body {
         background: rgba(65, 152, 199, 0.2);
         width: 100%;
-        height: calc(100vh - 155px);
+        height: calc(100vh - 150px);
         overflow-x: hidden;
         overflow-y: auto;
         scrollbar-width: none; /* firefox */
@@ -162,16 +175,31 @@
         color:dodgerblue;
         cursor: pointer;
         margin-top: 10px;
+        font-size: 14px;
+    }
+    .advertising-msg>div{
+        background: rgba(0,0,0,0);
+        text-align: left;
+        word-break:break-all;
+        word-wrap:break-word;
+        border-radius: 18px 18px 0 18px;
+        padding: 0;
+    }
+    .advertising-body{
+        border-radius: 18px 18px 18px 18px;
+        background: #FFFFFF;
+        padding: 10px;
     }
     .advertising-title{
         border-bottom: 1px solid #EEE;
         padding-bottom: 10px;
     }
     .advertising-title>div{
+        font-family: 微软雅黑;
         margin-right: 10px;
         display: inline;
         font-weight: bold;
-        font-size: 18px;
+        font-size: 16px;
         padding-bottom: 10px;
     }
     .advertising-title>div.active{
@@ -181,6 +209,35 @@
     .advertising-list>div{
         cursor: pointer;
         border-bottom: 2px dotted #EEE;
-        padding: 10px;
+        padding: 5px;
+        font-size: 14px;
+    }
+    .advertising-img{
+        width: 100%;
+        height: 50px;
+        text-align: center;
+        background: #FFF;
+        margin-bottom: 20px;
+    }
+    .advertising-img>img{
+        height: 100%;
+    }
+    .advertising-list-left{
+        float: left;
+        width: 50px;
+        text-align: center;
+    }
+    .advertising-list-left>div{
+        font-family: 隶书;
+        padding: 0 10px 10px 10px;
+        font-size: 20px;
+        width:20px;
+        line-height:30px;
+        text-align: center;
+    }
+    .advertising-list-right{
+        width: calc(100% - 50px);
+        height: 100%;
+        float: right;
     }
 </style>

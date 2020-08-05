@@ -73,12 +73,14 @@
         bottom: 0;
         left: 0;
         right: 0;
+        height: 100px;
         background: rgba(65, 152, 199, 0.2);
     }
 
     .common-word {
         text-align: left;
         padding: 0;
+        height: 18px;
     }
 
     .common-word li {
