@@ -1,5 +1,5 @@
 <template>
-  <div class="head">
+  <div class="head" v-if="!hideHeader">
     <img class="logo" alt="log" src="../assets/help_robot.png">
   </div>
 </template>
@@ -8,7 +8,7 @@
 export default {
   name: 'MessageHeader',
   props: {
-    msg: String
+    hideHeader: Boolean
   }
 }
 </script>

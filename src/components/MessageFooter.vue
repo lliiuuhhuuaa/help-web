@@ -1,13 +1,13 @@
 <template>
-    <div class="footer" v-bind:class="{'focusState':keybord}">
+    <div class="footer" v-bind:class="{'focusState':keyboard}">
         <ul class="common-word">
             <li v-for="item in words" :key="item" @click="sendQuickMsg(item)">
                 {{item}}
             </li>
         </ul>
         <div class="input-body">
-            <input class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg" placeholder="可以点这里输入问题" v-on:focus="this.scrollIntoView();"/>
-            <button class="send-button" v-bind:class="{'active':send}" v-on:click="sendMsg"></button>
+            <input class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg" placeholder="可以点这里输入问题"/>
+            <button class="send-button" v-bind:class="{'active':send}" v-on:click="sendMsg"/>
         </div>
     </div>
 </template>
@@ -25,13 +25,14 @@
                 send: false,
                 //上次发送时间
                 prevSendTime:0,
-                keybord:false,
+                //是否正在使用键盘
+                keyboard:false,
             }
         },
         watch: {
             //输入框内容变更
             content: function (val) {
-                this.send = val.trim() != '';
+                this.send = val.trim() !== '';
             }
         },
         created() {
@@ -39,12 +40,12 @@
             let clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
             window.addEventListener('resize', function () {
                 let nowClientHeight = document.documentElement.clientHeight || document.body.clientHeight;
-                if (clientHeight - nowClientHeight > 60 ) {//因为ios有自带的底部高度
-                    _this.keybord = true;
+                if (clientHeight - nowClientHeight > 60 &&document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {//因为ios有自带的底部高度
+                    _this.keyboard = true;
                     _this.Emit.$emit("appToBottom");
                     _this.Emit.$emit("bodyToBottom");
                 }else{
-                    _this.keybord = false;
+                    _this.keyboard = false;
                 }
             })
         },

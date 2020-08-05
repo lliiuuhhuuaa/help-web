@@ -1,7 +1,7 @@
 <template>
   <div id="app">
-    <MessageHeader msg="message header"/>
-    <MessageBody msg="message body"/>
+    <MessageHeader msg="message header" :hideHeader="hideHeader"/>
+    <MessageBody msg="message body" :hideHeader="hideHeader"/>
     <MessageFooter msg="message footer"/>
   </div>
 </template>
@@ -13,6 +13,12 @@ import MessageFooter from './components/MessageFooter.vue'
 
 export default {
   name: 'App',
+  data(){
+    return{
+      hideHeader: this.getUrlParam("hideHeader")=="1"
+    }
+
+  },
   mounted() {
     this.Emit.$on("appToBottom",this.scrollToBottom)
   },
@@ -28,6 +34,23 @@ export default {
       this.$nextTick(() => {
         document.documentElement.scrollTop = el.scrollHeight;
       });
+    },//获取地址栏参数
+    getUrlParam:function(name){
+      // 获取参数
+      var url = window.location.search;
+      // 正则筛选地址栏
+      var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+      // 匹配目标参数
+      var result = url.substr(1).match(reg);
+      if(!result){
+        return null;
+      }
+      var param = decodeURIComponent(result[2]);
+      if(param=='null'||param=='undefined'){
+        return null;
+      }
+      //返回参数值
+      return param;
     }
   }
 }

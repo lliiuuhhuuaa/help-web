@@ -1,10 +1,10 @@
 <template>
-    <div class="body">
+    <div class="body" v-bind:class="{'hide-header':hideHeader}">
         <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" v-bind:key="item.id">
             <div v-if="item.class==MsgClass.RECOMMEND">
                 <div class="recommend-title">{{item.data.title}}</div>
-                <div v-for="it in item.data.content" v-bind:key="it" @click="clickRecommend(it)">
-                    <div class="recommend-item">{{it}}</div>
+                <div v-for="(it,idx) in item.data.content" v-bind:key="it" @click="clickRecommend(it)">
+                    <div class="recommend-item">{{idx+1}}.{{it}}</div>
                 </div>
             </div>
             <div v-else-if="item.class==MsgClass.ADVERTISING">
@@ -34,6 +34,9 @@
 <script>
     export default {
         name: 'MessageBody',
+        props: {
+            hideHeader: Boolean
+        },
         data(){
             return{
                 MsgClass: {"SELF":"self-msg","REPLY":"reply-msg","RECOMMEND":"recommend-msg","ADVERTISING":"advertising-msg"},
@@ -57,7 +60,6 @@
         methods:{
             //点击推荐
             clickRecommend:function(item){
-                console.log(item)
                 this.selfSendMsg({'data':item})
             },
             //发送消息
@@ -126,6 +128,9 @@
         overflow-y: auto;
         scrollbar-width: none; /* firefox */
         -ms-overflow-style: none; /* IE 10+ */
+    }
+    .body.hide-header{
+        height: calc(100vh - 100px);
     }
     .body::-webkit-scrollbar {
         display: none; /* Chrome Safari */
@@ -201,8 +206,9 @@
         margin-right: 10px;
         display: inline;
         font-weight: bold;
-        font-size: 16px;
+        font-size: 15px;
         padding-bottom: 10px;
+        cursor: pointer;
     }
     .advertising-title>div.active{
         color: #0099CC;
