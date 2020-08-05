@@ -41,9 +41,13 @@
             window.addEventListener('resize', function () {
                 let nowClientHeight = document.documentElement.clientHeight || document.body.clientHeight;
                 if (clientHeight - nowClientHeight > 60 &&document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {//因为ios有自带的底部高度
-                    _this.keyboard = true;
-                    _this.Emit.$emit("appToBottom");
-                    _this.Emit.$emit("bodyToBottom");
+                    //处理部分输入框遮挡的问题
+                    if(clientHeight-nowClientHeight<200){
+                        _this.keyboard = true;
+                        _this.Emit.$emit("appToBottom");
+                        _this.Emit.$emit("bodyToBottom");
+                    }
+
                 }else{
                     _this.keyboard = false;
                 }
