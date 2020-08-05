@@ -83,7 +83,7 @@
 <style scoped>
     .footer {
         height: 100px;
-        background: rgba(65, 152, 199, 0.2);
+        background: rgba(65, 152, 199, 0.1);
     }
     .focusState{
         margin-bottom: 70px;

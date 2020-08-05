@@ -1,7 +1,7 @@
 <template>
   <div id="app">
-    <MessageHeader msg="message header" :hideHeader="hideHeader"/>
-    <MessageBody msg="message body" :hideHeader="hideHeader"/>
+    <MessageHeader msg="message header" :hide-header="hideHeader"/>
+    <MessageBody msg="message body" :hide-header="hideHeader"/>
     <MessageFooter msg="message footer"/>
   </div>
 </template>
