@@ -1,12 +1,12 @@
 <template>
-    <div class="footer">
+    <div class="footer" v-bind:class="{'focusState':keybord}">
         <ul class="common-word">
             <li v-for="item in words" :key="item" @click="sendQuickMsg(item)">
                 {{item}}
             </li>
         </ul>
         <div class="input-body">
-            <input class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg" placeholder="可以点这里输入问题"/>
+            <input class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg" placeholder="可以点这里输入问题" v-on:focus="this.scrollIntoView();"/>
             <button class="send-button" v-bind:class="{'active':send}" v-on:click="sendMsg"></button>
         </div>
     </div>
@@ -25,16 +25,28 @@
                 send: false,
                 //上次发送时间
                 prevSendTime:0,
+                keybord:false,
             }
-        },
-        props: {
-            msg: String
         },
         watch: {
             //输入框内容变更
             content: function (val) {
                 this.send = val.trim() != '';
             }
+        },
+        created() {
+            let _this = this;
+            let clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
+            window.addEventListener('resize', function () {
+                let nowClientHeight = document.documentElement.clientHeight || document.body.clientHeight;
+                if (clientHeight - nowClientHeight > 60 ) {//因为ios有自带的底部高度
+                    _this.keybord = true;
+                    _this.Emit.$emit("appToBottom");
+                    _this.Emit.$emit("bodyToBottom");
+                }else{
+                    _this.keybord = false;
+                }
+            })
         },
         methods: {
             //发送消息
@@ -69,18 +81,17 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
     .footer {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
         height: 100px;
         background: rgba(65, 152, 199, 0.2);
     }
-
+    .focusState{
+        margin-bottom: 70px;
+    }
     .common-word {
         text-align: left;
-        padding: 0;
+        padding: 15px 10px;
         height: 18px;
+        margin:0;
     }
 
     .common-word li {

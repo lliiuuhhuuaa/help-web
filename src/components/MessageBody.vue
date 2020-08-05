@@ -51,7 +51,8 @@
             this.msgList.push(reply);
         },
         mounted() {
-            this.Emit.$on("fromFooter",this.selfSendMsg)
+            this.Emit.$on("fromFooter",this.selfSendMsg),
+            this.Emit.$on("bodyToBottom",this.scrollBottom)
         },
         methods:{
             //点击推荐
@@ -102,6 +103,7 @@
             //切换显示列表
             switchList:function(index){
                 this.advertisingIndex = index;
+                //更新下标，强制更新视图
                 this.$forceUpdate();
             },
             //滚动到底部
