@@ -35,24 +35,36 @@
                 this.send = val.trim() !== '';
             }
         },
-        created() {
-            let _this = this;
-            let clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
-            window.addEventListener('resize', function () {
-                let nowClientHeight = document.documentElement.clientHeight || document.body.clientHeight;
-                if (clientHeight - nowClientHeight > 60 &&document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {//因为ios有自带的底部高度
-                    //处理部分输入框遮挡的问题
-                    if(clientHeight-nowClientHeight<200){
-                        _this.keyboard = true;
-                        _this.Emit.$emit("appToBottom");
-                        _this.Emit.$emit("bodyToBottom");
-                    }
-
-                }else{
-                    _this.keyboard = false;
-                }
-            })
-        },
+        // created() {
+        //     let _this = this;
+        //     //let clientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+        //     let clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
+        //     let y = document.getElementsByClassName("input-text")[0].getBoundingClientRect().y
+        //     window.addEventListener('resize', function () {
+        //         //let nowClientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+        //         //let nowClientHeight = document.documentElement.clientHeight || document.body.clientHeight;
+        //         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {//因为ios有自带的底部高度
+        //            alert(y)
+        //            alert(document.activeElement.getBoundingClientRect().y)
+        //            alert(y-document.activeElement.getBoundingClientRect().y)
+        //             let height = clientHeight-document.activeElement.getBoundingClientRect().y;
+        //             this.footMargin = height;
+        //             /*_this.keyboard = true;*/
+        //             _this.Emit.$emit("appToBottom");
+        //             _this.Emit.$emit("bodyToBottom");
+        //             alert(height);
+        //             //处理部分输入框遮挡的问题
+        //             /*if(clientHeight-nowClientHeight<200){
+        //                 _this.keyboard = true;
+        //                 _this.Emit.$emit("appToBottom");
+        //                 _this.Emit.$emit("bodyToBottom");
+        //             }*/
+        //
+        //         }else{
+        //             _this.keyboard = false;
+        //         }
+        //     })
+        // },
         methods: {
             //发送消息
             sendMsg: function () {
@@ -86,6 +98,10 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
     .footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
         height: 100px;
         background: rgba(65, 152, 199, 0.1);
     }
