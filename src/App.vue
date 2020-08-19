@@ -1,67 +1,88 @@
 <template>
-  <div id="app">
-    <MessageHeader msg="message header" :hide-header="hideHeader"/>
-    <MessageBody msg="message body" :hide-header="hideHeader"/>
-    <MessageFooter msg="message footer"/>
-  </div>
+    <div id="app">
+        <MessageHeader msg="message header" :hide-header="hideHeader"/>
+        <MessageBody msg="message body" :hide-header="hideHeader"/>
+        <MessageFooter msg="message footer"/>
+        <div class="loading" v-if="this.$store.state.loading">
+            <div class="spinner-box spinner-box-inner">
+                <div class="pulse-container">
+                    <div class="spinner-inner-text">加载中</div>
+                    <div class="pulse-bubble pulse-bubble-1"></div>
+                    <div class="pulse-bubble pulse-bubble-2"></div>
+                    <div class="pulse-bubble pulse-bubble-3"></div>
+                </div>
+            </div>
+            <div class="spinner-box">
+                <div class="circle-border">
+                    <div class="circle-core"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
-import MessageHeader from './components/MessageHeader.vue'
-import MessageBody from './components/MessageBody.vue'
-import MessageFooter from './components/MessageFooter.vue'
+    import MessageHeader from './components/MessageHeader.vue'
+    import MessageBody from './components/MessageBody.vue'
+    import MessageFooter from './components/MessageFooter.vue'
+    import "@/assets/css/loading.css";
+    export default {
+        name: 'App',
+        data() {
+            return {
+                hideHeader: this.getUrlParam("hideHeader") == "1",
+            }
 
-export default {
-  name: 'App',
-  data(){
-    return{
-      hideHeader: this.getUrlParam("hideHeader")=="1"
+        },
+        created() {
+            this.$ajax.post("/open/user/connect",{}).then(res=>{
+                console.log(res);
+            })
+        },
+        mounted() {
+            this.Emit.$on("appToBottom", this.scrollToBottom)
+        },
+        components: {
+            MessageBody: MessageBody,
+            MessageHeader: MessageHeader,
+            MessageFooter: MessageFooter
+        },
+        methods: {
+            //弹出键盘时滚动到底部
+            scrollToBottom: function () {
+                let el = document.getElementById("app");
+                this.$nextTick(() => {
+                    document.documentElement.scrollTop = el.scrollHeight;
+                });
+            },//获取地址栏参数
+            getUrlParam: function (name) {
+                // 获取参数
+                var url = window.location.search;
+                // 正则筛选地址栏
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+                // 匹配目标参数
+                var result = url.substr(1).match(reg);
+                if (!result) {
+                    return null;
+                }
+                var param = decodeURIComponent(result[2]);
+                if (param == 'null' || param == 'undefined') {
+                    return null;
+                }
+                //返回参数值
+                return param;
+            }
+        }
     }
-
-  },
-  mounted() {
-    this.Emit.$on("appToBottom",this.scrollToBottom)
-  },
-  components: {
-    MessageBody:MessageBody,
-    MessageHeader:MessageHeader,
-    MessageFooter:MessageFooter
-  },
-  methods:{
-    //弹出键盘时滚动到底部
-    scrollToBottom:function () {
-      let el = document.getElementById("app");
-      this.$nextTick(() => {
-        document.documentElement.scrollTop = el.scrollHeight;
-      });
-    },//获取地址栏参数
-    getUrlParam:function(name){
-      // 获取参数
-      var url = window.location.search;
-      // 正则筛选地址栏
-      var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
-      // 匹配目标参数
-      var result = url.substr(1).match(reg);
-      if(!result){
-        return null;
-      }
-      var param = decodeURIComponent(result[2]);
-      if(param=='null'||param=='undefined'){
-        return null;
-      }
-      //返回参数值
-      return param;
-    }
-  }
-}
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
+    #app {
+        font-family: Avenir, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-align: center;
+        color: #2c3e50;
+        overflow-y: auto;
+    }
 </style>

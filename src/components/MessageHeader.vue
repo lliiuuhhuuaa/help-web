@@ -1,6 +1,6 @@
 <template>
   <div class="head" v-if="!hideHeader">
-    <img class="logo" alt="log" src="../assets/help_robot.png">
+    <img class="logo" alt="log" src="../assets/img/help_robot.png">
   </div>
 </template>
 

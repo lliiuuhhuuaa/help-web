@@ -147,13 +147,13 @@
         width: 50px;
         height: 30px;
         border: none;
-        background: url("../assets/send_grey.svg") no-repeat center;
+        background: url("../assets/img/send_grey.svg") no-repeat center;
         background-size: 100% 100%;
         outline: none;
     }
 
     .send-button.active {
-        background: url("../assets/send.svg") no-repeat center;
+        background: url("../assets/img/send.svg") no-repeat center;
         background-size: 100% 100%;
     }
 </style>
