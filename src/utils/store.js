@@ -3,9 +3,11 @@ import Vuex from 'vuex'
 Vue.use(Vuex);
 const store = new Vuex.Store({
     state: {
-        serviceUrl:"http://127.0.0.1:13010/help/api/",
+        serviceUrl:"/help/api",
         loading: true,
+        loadingNoBack: false,
         ResultCode: {
+            OK: 200,//成功
             ERROR: 300, // 失败
             NO_AUTH: 400, // 未认证
             NO_PERMISSION: 500 // 权限不足
