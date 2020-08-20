@@ -1,7 +1,7 @@
 <template>
     <div id="app">
         <MessageHeader msg="message header" :hide-header="hideHeader"/>
-        <MessageBody msg="message body" :hide-header="hideHeader"/>
+        <MessageBody ref="mb" msg="message body" :hide-header="hideHeader"></MessageBody>
         <MessageFooter msg="message footer"/>
         <div class="loading" v-if="this.$store.state.loading" v-bind:class="{'no-back':this.$store.state.loadingNoBack}">
             <div class="spinner-box spinner-box-inner">
@@ -26,6 +26,7 @@
     import MessageBody from './components/MessageBody.vue'
     import MessageFooter from './components/MessageFooter.vue'
     import "@/assets/css/loading.css";
+    import store from "@/utils/store";
 
     export default {
         name: 'App',
@@ -35,10 +36,8 @@
             }
         },
         created() {
-            this.$ajax.post("/open/user/connect", {cert: this.getUrlParam("cert")}).then(res => {
-                console.log(res);
-                localStorage.setItem("tk",res.data);
-            })
+            //登陆认证
+            this.loginConnect();
         },
         mounted() {
             this.Emit.$on("appToBottom", this.scrollToBottom)
@@ -49,6 +48,13 @@
             MessageFooter: MessageFooter
         },
         methods: {
+            //登陆
+            loginConnect:function(){
+                this.$ajax.post("/open/user/connect", {cert: this.getUrlParam("cert")}).then(res => {
+                    localStorage.setItem("tk",res.data);
+                    store.commit("updateState",{login:true});
+                })
+            },
             //弹出键盘时滚动到底部
             scrollToBottom: function () {
                 let el = document.getElementById("app");

@@ -6,6 +6,7 @@ const store = new Vuex.Store({
         serviceUrl:"/help/api",
         loading: true,
         loadingNoBack: false,
+        login:false,
         ResultCode: {
             OK: 200,//成功
             ERROR: 300, // 失败

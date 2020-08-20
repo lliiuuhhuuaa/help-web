@@ -12,10 +12,10 @@
                     <div class="advertising-img" v-if="item.data.img"><img v-bind:src="item.data.img"></div>
                     <div class="advertising-body">
                         <div class="advertising-title">
-                            <div v-for="(it,index) in item.data.content" v-bind:key="it.title"
+                            <div v-for="(it,index) in item.data.content" v-bind:key="it.classify"
                                  @click="switchList(index)"
-                                 v-bind:class="{'active':advertising[advertisingIndex].title==it.title}">
-                                {{it.title}}
+                                 v-bind:class="{'active':advertising[advertisingIndex].classify==it.classify}">
+                                {{it.classify}}
                             </div>
                         </div>
                         <div class="advertising-list-left">
@@ -32,7 +32,7 @@
                         <div style="clear: both"></div>
                     </div>
                 </div>
-                <div v-else>{{item.data}}</div>
+                <div v-else>{{item.tag}}</div>
             </div>
         </MessageLoad>
     </div>
@@ -65,41 +65,46 @@
                 iPageSize: 10,
             }
         },
-        created() {
-            let reply = {
-                class: this.MsgClass.ADVERTISING,
-                data: {
-                    "img": "images/logo_rect.png",
-                    "content": [{
-                        "title": "热点关注",
-                        list: ["人生在世", "生离死别", "悲欢离何", "人生在世1", "生离死别2", "悲欢离何1"]
-                    }, {
-                        "title": "注册问题",
-                        list: ["如何变牛逼", "baidu.com如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼"]
-                    }]
-                },
-                id: +new Date()
-            };
-            this.advertising = reply.data.content;
-            this.advertisingIndex = 0;
-            this.msgList.push(reply);
-        },
         mounted() {
                 this.Emit.$on("fromFooter", this.selfSendMsg),
                 this.Emit.$on("bodyToBottom", this.scrollBottom)
         },
         methods: {
+            initData:function(){
+                this.$ajax.post("/web/merchant/getHelpIndividuality", {}).then(res => {
+                    res = res.data;
+                    if(res.helpTags!=null&&res.helpTags.length>0){
+                        //添加推荐问题
+                        let reply = {
+                            class: this.MsgClass.ADVERTISING,
+                            data: {
+                                "img": res.advertising,
+                                "content": res.helpTags
+                            },
+                            id: +new Date()
+                        };
+                        this.advertising = reply.data.content;
+                        this.advertisingIndex = 0;
+                        this.msgList.push(reply);
+                    }
+                    console.log(res);
+                    let reply = {
+                        class: this.MsgClass.REPLY,
+                        tag: res.greeting,
+                        id: res.createDate
+                    };
+                    this.msgList.push(reply);
+                });
+            },
             //点击推荐
             clickRecommend: function (item) {
-                this.selfSendMsg({'data': item})
+                this.selfSendMsg({'tag': item})
             },
             //发送消息
             selfSendMsg: function (obj) {
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
                 obj.replyId = obj.id + 1;
-                //请求发送
-                this.requestSend(obj);
                 //显示消息
                 this.msgList.push(obj);
                 this.scrollBottom();
@@ -111,16 +116,24 @@
                 };
                 this.msgList.push(reply);
                 this.scrollBottom();
+                //请求发送
+                this.requestSend(obj);
             },
             //请求发送消息
-            requestSend: function (msg) {
+            requestSend: function (obj) {
                 let _this = this;
-                setTimeout(function () {
+                this.$ajax.post("/web/help/tag", obj).then(res => {
+                    res = res.data;
+                    console.log(res);
                     _this.msgList.forEach(obj => {
-                        if (obj.id == msg.replyId) {
+                        if (obj.id == obj.replyId) {
                             obj.data = "不好意思，让您久等了";
                         }
                     })
+
+                });
+                setTimeout(function () {
+
                     if (Math.random() * 10 > 5) {
                         //发送消息
                         let reply = {
@@ -172,8 +185,20 @@
                     el.scrollTop = el.scrollHeight
                 }, 100);
             }
+        },
+        computed:{
+            login(){
+                return this.$store.state.login;
+            }
+        },
+        watch:{
+            login:function(val){
+                if(val){
+                    //登陆成功初始化数据
+                    this.initData();
+                }
+            }
         }
-
     }
 </script>
 
