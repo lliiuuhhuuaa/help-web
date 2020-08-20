@@ -3,7 +3,7 @@
         <MessageHeader msg="message header" :hide-header="hideHeader"/>
         <MessageBody msg="message body" :hide-header="hideHeader"/>
         <MessageFooter msg="message footer"/>
-        <div class="loading" v-if="this.$store.state.loading">
+        <div class="loading" v-if="this.$store.state.loading" v-bind:class="{'no-back':this.$store.state.loadingNoBack}">
             <div class="spinner-box spinner-box-inner">
                 <div class="pulse-container">
                     <div class="spinner-inner-text">加载中</div>
@@ -26,17 +26,18 @@
     import MessageBody from './components/MessageBody.vue'
     import MessageFooter from './components/MessageFooter.vue'
     import "@/assets/css/loading.css";
+
     export default {
         name: 'App',
         data() {
             return {
                 hideHeader: this.getUrlParam("hideHeader") == "1",
             }
-
         },
         created() {
-            this.$ajax.post("/open/user/connect",{}).then(res=>{
+            this.$ajax.post("/open/user/connect", {cert: this.getUrlParam("cert")}).then(res => {
                 console.log(res);
+                localStorage.setItem("tk",res.data);
             })
         },
         mounted() {
