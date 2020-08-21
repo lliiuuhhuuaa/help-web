@@ -6,7 +6,7 @@
             </li>
         </ul>
         <div class="input-body">
-            <input class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg" placeholder="可以点这里输入问题"/>
+            <input autocomplete="off" class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg" placeholder="可以点这里输入问题"/>
             <button class="send-button" v-bind:class="{'active':send}" v-on:click="sendMsg"/>
         </div>
     </div>
@@ -76,7 +76,7 @@
                 }
                 this.prevSendTime = time;
                 //发送
-                this.Emit.$emit("fromFooter",{tag:this.content});
+                this.$store.commit("updateState", {waitSend: {tag:this.content}});
                 this.content = "";
             },
             sendQuickMsg:function (item){
@@ -87,7 +87,7 @@
                 }
                 this.prevSendTime = time;
                 //发送
-                this.Emit.$emit("fromFooter",{tag:item});
+                this.$store.commit("updateState", {waitSend: {tag:item}});
             }
         }
     }

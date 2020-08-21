@@ -24,7 +24,12 @@ const store = new Vuex.Store({
             DB:1, // 数据库
             FILE:2, // 文件
             URL:3, // url
-        }
+            PC:4, //爬虫1
+            PC2:5, //爬虫2
+            RECOMMEND:6 //推荐
+        },
+        //待发送消息
+        waitSend:{}
     },
     mutations: {
         updateState(obj,param){

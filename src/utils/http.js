@@ -3,7 +3,7 @@ import store from './store';
 //基础地址
 axios.defaults.baseURL = store.state.serviceUrl;
 //超时时间
-axios.defaults.timeout = 5000;
+axios.defaults.timeout = 10000;
 //配置拦截器
 axios.interceptors.request.use(config => {
     if(config.url.startsWith("http")){
@@ -32,7 +32,7 @@ axios.interceptors.request.use(config => {
 }, error => {
     // 关闭loading
    // store.commit("updateState", {loading: false});
-    store.state.layer.msg("网络繁忙,请稍候重试", {time: 5000});
+    store.state.layer.msg("网络繁忙,请稍候重试");
     return Promise.reject(error)
 });
 
@@ -70,13 +70,13 @@ axios.interceptors.response.use(response => {
     let resp = error.response;
     let code = resp ? resp.status : null;
     if (code === 500) {
-        store.state.layer.msg("系统繁忙,请稍候重试", {time: 5000});
+        store.state.layer.msg("系统繁忙,请稍候重试");
     } else if (code === 502) {
-        store.state.layer.msg("网络繁忙,请稍候重试", {time: 5000});
+        store.state.layer.msg("网络繁忙,请稍候重试");
     } else if (code === 404) {
-        store.state.layer.msg("系统被外星人带走了,正在抢救", {time: 5000});
+        store.state.layer.msg("系统被外星人带走了,正在抢救");
     } else {
-        store.state.layer.msg("系统繁忙,请稍候重试", {time: 5000});
+        store.state.layer.msg("系统繁忙,请稍候重试");
     }
     return Promise.reject(error)
 });

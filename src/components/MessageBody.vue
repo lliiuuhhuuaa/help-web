@@ -32,7 +32,14 @@
                         <div style="clear: both"></div>
                     </div>
                 </div>
-                <div v-else><div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div><div v-else>{{item.tag}}</div></div>
+                <div v-else>
+                    <div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div>
+                    <div class="html-div" v-if="item.type==='ask_answer'">
+                        {{item.tag[0]}}
+                        <button class="get-answer" @click="$event.currentTarget.innerText=item.tag[1]">查看答案</button>
+                    </div>
+                    <div v-else>{{item.tag}}</div>
+                </div>
             </div>
         </MessageLoad>
     </div>
@@ -65,10 +72,6 @@
                 iPageSize: 10,
                 constant: this.$store.state
             }
-        },
-        mounted() {
-            this.Emit.$on("fromFooter", this.selfSendMsg),
-                this.Emit.$on("bodyToBottom", this.scrollBottom)
         },
         methods: {
             initData: function () {
@@ -127,39 +130,20 @@
             requestSend: function (tag, reply) {
                 this.$ajax.post("/web/help/tag", {tag: tag}).then(res => {
                     res = res.data;
-                    console.log(res)
                     if (res.state === this.constant.MsgState.DANGER) {
                         reply.tag = res.reply;
+                        this.scrollBottom();
                         return;
                     }
                     if (res.state === this.constant.MsgState.WAIT) {
-                        reply.tag = "智能助手解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
+                        reply.tag = "小化助手解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
+                        this.scrollBottom();
                         return;
                     }
                     if (res.state === this.constant.MsgState.OK) {
-                        if (res.storageType === this.constant.StorageType.DB) {
-                            reply.tag = res.reply;
-                            return;
-                        }
-                        if (res.storageType === this.constant.StorageType.FILE) {
-                            this.$ajax.get("/other/file/getGeneralFile/"+res.reply,{}).then(res => {
-                                reply['type'] = 'html';
-                                reply.tag = res;
-                            });
-                            return;
-                        }
-                        if (res.storageType === this.constant.StorageType.URL) {
-                            reply.tag = "正在为您访问:"+res.reply;
-                            let urlData = {
-                                class: this.MsgClass.REPLY,
-                                tag: '<iframe src="'+res.reply+'" width="100%" height="400px" frameborder="no" border="0" marginwidth="0" marginheight="0" scrolling="auto" allowtransparency="yes">',
-                                type: 'html',
-                                id: +new Date()
-                            };
-                            this.msgList.push(urlData);
-
-                        }
-
+                        this.showMsgHandle(reply,res);
+                        this.scrollBottom();
+                        return;
                     }
                     if (res.state === this.constant.MsgState.RECOMMEND) {
                         reply.tag = "我猜您是要问这些吗?";
@@ -172,8 +156,49 @@
                             id: +new Date()
                         };
                         this.msgList.push(recommend);
+                        this.scrollBottom();
                     }
                 });
+            },
+            showMsgHandle:function(reply,res){
+                if (res.storageType === this.constant.StorageType.DB || res.storageType === this.constant.StorageType.PC) {
+                    reply.tag = res.reply;
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.FILE) {
+                    this.$ajax.get("/other/file/getGeneralFile/" + res.reply, {}).then(res => {
+                        reply['type'] = 'html';
+                        reply.tag = res;
+                    });
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.URL) {
+                    reply.tag = "正在为您访问:" + res.reply;
+                    let urlData = {
+                        class: this.MsgClass.REPLY,
+                        tag: '<iframe src="' + res.reply + '" width="100%" height="400px" frameborder="no" border="0" marginwidth="0" marginheight="0" scrolling="auto" allowtransparency="yes">',
+                        type: 'html',
+                        id: +new Date()
+                    };
+                    this.msgList.push(urlData);
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.PC2) {
+                    let arr = res.reply.split("|");
+                    reply.type = 'ask_answer';
+                    reply.tag = arr;
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.RECOMMEND) {
+                    reply.tag = "来看看这些";
+                    let recommend = {
+                        class: this.MsgClass.RECOMMEND,
+                        data: JSON.parse(res.reply),
+                        id: +new Date()
+                    };
+                    this.msgList.push(recommend);
+                    return;
+                }
             },
             //切换显示列表
             switchList: function (index) {
@@ -209,12 +234,17 @@
                 el.scrollTop = el.scrollHeight;
                 setTimeout(function () {
                     el.scrollTop = el.scrollHeight
-                }, 100);
+                }, 200);
             }
         },
         computed: {
+            //登陆状态更新
             login() {
                 return this.constant.login;
+            },
+            //待发送更新
+            waitSend() {
+                return this.constant.waitSend;
             }
         },
         watch: {
@@ -228,6 +258,10 @@
                 if (this.scrollState) {
                     this.scrollBottom();
                 }
+            },
+            //待发送更新
+            waitSend: function (obj) {
+                this.selfSendMsg(obj);
             }
         }
     }
@@ -385,7 +419,20 @@
         height: 100%;
         float: right;
     }
-    .html-div{
+    .html-div {
         overflow: auto;
+    }
+
+    .get-answer {
+        float: right;
+        padding: 5px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background: rgba(120, 200, 240, 0.9);
+        color: #FFF;
+        outline: none;
+        box-shadow: none;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     }
 </style>
