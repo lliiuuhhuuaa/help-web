@@ -1,7 +1,7 @@
 <template>
     <div class="footer" v-bind:class="{'focusState':keyboard}">
         <ul class="common-word">
-            <li v-for="item in words" :key="item" @click="sendQuickMsg(item)">
+            <li v-for="item in this.$store.state.commons" :key="item" @click="sendQuickMsg(item)">
                 {{item}}
             </li>
         </ul>
@@ -19,8 +19,6 @@
             return {
                 //输入内容
                 content: "",
-                //常见问题关键词
-                words: ["怎么用?", "是吗", "怎么退出"],
                 //发送按钮是否可用
                 send: false,
                 //上次发送时间
@@ -73,23 +71,23 @@
                 }
                 let time = +new Date();
                 if(this.prevSendTime+1000>time){
-                    alert("发送太频繁了");
+                    this.$layer.msg("发送太频繁了");
                     return;
                 }
                 this.prevSendTime = time;
                 //发送
-                this.Emit.$emit("fromFooter",{data:this.content});
+                this.Emit.$emit("fromFooter",{tag:this.content});
                 this.content = "";
             },
             sendQuickMsg:function (item){
                 let time = +new Date();
                 if(this.prevSendTime+1000>time){
-                    alert("发送太频繁了");
+                    this.$layer.msg("发送太频繁了");
                     return;
                 }
                 this.prevSendTime = time;
                 //发送
-                this.Emit.$emit("fromFooter",{data:item});
+                this.Emit.$emit("fromFooter",{tag:item});
             }
         }
     }

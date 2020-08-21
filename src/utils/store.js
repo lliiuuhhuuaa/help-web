@@ -7,6 +7,7 @@ const store = new Vuex.Store({
         loading: true,
         loadingNoBack: false,
         login:false,
+        commons:[],
         ResultCode: {
             OK: 200,//成功
             ERROR: 300, // 失败

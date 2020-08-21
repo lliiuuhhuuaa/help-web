@@ -11,59 +11,66 @@ axios.interceptors.request.use(config => {
     if (tk) {
         config.headers['tk'] = tk;
     }
-    if(config.headers['Content-Type']==null){
+    if (config.headers['Content-Type'] == null) {
         // 配置content-Type
         config.headers['Content-Type'] = 'application/x-www-form-urlencoded';
         let ret = "";
         let data = config.data;
         for (let dataKey in data) {
-            if(ret!==""){
-                ret = "&";
+            if (ret !== "") {
+                ret += "&";
             }
             ret += dataKey + "=" + data[dataKey];
         }
         config.data = ret;
     }
-    store.commit("updateState",{loading:true});
+   // store.commit("updateState", {loading: true});
     return config
 }, error => {
-    store.state.layer.msg("网络繁忙,请稍候重试",{time:10000});
+    // 关闭loading
+   // store.commit("updateState", {loading: false});
+    store.state.layer.msg("网络繁忙,请稍候重试", {time: 5000});
     return Promise.reject(error)
 });
 
 // 接收
 axios.interceptors.response.use(response => {
-    if(response.data.code===store.state.ResultCode.NO_AUTH){
+    if (response.data.code === store.state.ResultCode.NO_AUTH) {
         localStorage.removeItem("loginUser");
-        store.state.layer.alert("登陆失效",{icon:0});
-        store.commit("updateState",{login:true});
+        store.state.layer.alert("登陆失效", {icon: 0});
+        store.commit("updateState", {login: true});
         //中止执行
-        return new Promise(()=>{});
+        return new Promise(() => {
+        });
     }
-    if(response.data.code===store.state.ResultCode.ERROR){
-        store.state.layer.alert(response.data.msg,{icon:0});
+    if (response.data.code === store.state.ResultCode.ERROR) {
+        store.state.layer.alert(response.data.msg, {icon: 0});
         //中止执行
-        return new Promise(()=>{});
+        return new Promise(() => {
+        });
     }
-    if(response.data.code===store.state.ResultCode.NO_PERMISSION){
-        store.state.layer.alert("权限不足",{icon:0});
+    if (response.data.code === store.state.ResultCode.NO_PERMISSION) {
+        store.state.layer.alert("权限不足", {icon: 0});
         //中止执行
-        return new Promise(()=>{});
+        return new Promise(() => {
+        });
     }
     // 关闭loading
-    store.commit("updateState",{loading:false});
+    //store.commit("updateState", {loading: false});
     return response.data;
 }, error => {
+    // 关闭loading
+    //store.commit("updateState", {loading: false});
     let resp = error.response;
-    let code = resp?resp.status:null;
-    if(code===500){
-        store.state.layer.msg("系统繁忙,请稍候重试",{time:60000});
-    }else if(code===502){
-        store.state.layer.msg("网络繁忙,请稍候重试",{time:60000});
-    }else if(code===404){
-        store.state.layer.msg("系统被外星人带走了,正在抢救",{time:60000});
-    }else{
-        store.state.layer.msg("系统繁忙,请稍候重试",{time:60000});
+    let code = resp ? resp.status : null;
+    if (code === 500) {
+        store.state.layer.msg("系统繁忙,请稍候重试", {time: 5000});
+    } else if (code === 502) {
+        store.state.layer.msg("网络繁忙,请稍候重试", {time: 5000});
+    } else if (code === 404) {
+        store.state.layer.msg("系统被外星人带走了,正在抢救", {time: 5000});
+    } else {
+        store.state.layer.msg("系统繁忙,请稍候重试", {time: 5000});
     }
     return Promise.reject(error)
 });

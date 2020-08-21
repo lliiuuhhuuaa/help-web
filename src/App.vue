@@ -51,6 +51,7 @@
             //登陆
             loginConnect:function(){
                 this.$ajax.post("/open/user/connect", {cert: this.getUrlParam("cert")}).then(res => {
+                    store.commit("updateState", {loading: false});
                     localStorage.setItem("tk",res.data);
                     store.commit("updateState",{login:true});
                 })

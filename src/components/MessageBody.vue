@@ -78,14 +78,18 @@
                         let reply = {
                             class: this.MsgClass.ADVERTISING,
                             data: {
-                                "img": res.advertising,
-                                "content": res.helpTags
+                                img: res.advertising,
+                                content: res.helpTags
                             },
                             id: +new Date()
                         };
                         this.advertising = reply.data.content;
+
                         this.advertisingIndex = 0;
                         this.msgList.push(reply);
+                    }
+                    if(res.commons){
+                        this.$store.commit("updateState",{commons:res.commons.split(",")});
                     }
                     console.log(res);
                     let reply = {
@@ -111,43 +115,37 @@
                 //发送消息
                 let reply = {
                     class: this.MsgClass.REPLY,
-                    data: '正在输入...',
+                    tag: '正在输入...',
                     id: +obj.replyId
                 };
                 this.msgList.push(reply);
                 this.scrollBottom();
                 //请求发送
-                this.requestSend(obj);
+                this.requestSend(obj.tag,reply);
             },
             //请求发送消息
-            requestSend: function (obj) {
-                let _this = this;
-                this.$ajax.post("/web/help/tag", obj).then(res => {
+            requestSend: function (tag,reply) {
+                this.$ajax.post("/web/help/tag", {tag:tag}).then(res => {
                     res = res.data;
-                    console.log(res);
-                    _this.msgList.forEach(obj => {
-                        if (obj.id == obj.replyId) {
-                            obj.data = "不好意思，让您久等了";
-                        }
-                    })
+                    reply.tag = res.reply;
 
                 });
-                setTimeout(function () {
-
-                    if (Math.random() * 10 > 5) {
-                        //发送消息
-                        let reply = {
-                            class: _this.MsgClass.RECOMMEND,
-                            data: {
-                                "title": "你是要找这些吗,相关问题",
-                                "content": ["如何变富?", "如何变牛逼", "baidu.com如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼"]
-                            },
-                            id: +new Date()
-                        };
-                        _this.msgList.push(reply);
-                        _this.scrollBottom();
-                    }
-                }, 1000);
+                // setTimeout(function () {
+                //
+                //     if (Math.random() * 10 > 5) {
+                //         //发送消息
+                //         let reply = {
+                //             class: _this.MsgClass.RECOMMEND,
+                //             data: {
+                //                 "title": "你是要找这些吗,相关问题",
+                //                 "content": ["如何变富?", "如何变牛逼", "baidu.com如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼"]
+                //             },
+                //             id: +new Date()
+                //         };
+                //         _this.msgList.push(reply);
+                //         _this.scrollBottom();
+                //     }
+                // }, 1000);
             },
             //切换显示列表
             switchList: function (index) {
