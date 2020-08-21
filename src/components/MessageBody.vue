@@ -232,9 +232,13 @@
             scrollBottom: function () {
                 let el = document.getElementById("refresh-scroll");
                 el.scrollTop = el.scrollHeight;
-                setTimeout(function () {
-                    el.scrollTop = el.scrollHeight
-                }, 200);
+                let count = 10;
+                let interval = setInterval(()=>{
+                    el.scrollTop = el.scrollHeight;
+                    if(--count<0){
+                        clearInterval(interval);
+                    }
+                },10)
             }
         },
         computed: {
