@@ -13,6 +13,17 @@ const store = new Vuex.Store({
             ERROR: 300, // 失败
             NO_AUTH: 400, // 未认证
             NO_PERMISSION: 500 // 权限不足
+        },
+        MsgState:{
+            DANGER:0, // 敏感词拦截
+            WAIT:1, // 提交客服等待回复
+            RECOMMEND:2, // 推荐问题
+            OK:10 // 正常
+        },
+        StorageType:{
+            DB:1, // 数据库
+            FILE:2, // 文件
+            URL:3, // url
         }
     },
     mutations: {

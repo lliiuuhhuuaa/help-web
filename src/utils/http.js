@@ -6,6 +6,9 @@ axios.defaults.baseURL = store.state.serviceUrl;
 axios.defaults.timeout = 5000;
 //配置拦截器
 axios.interceptors.request.use(config => {
+    if(config.url.startsWith("http")){
+        return config;
+    }
     // 配置token
     let tk = localStorage.getItem("tk");
     if (tk) {
@@ -35,6 +38,9 @@ axios.interceptors.request.use(config => {
 
 // 接收
 axios.interceptors.response.use(response => {
+    if(response.config.url.startsWith("http")){
+        return response;
+    }
     if (response.data.code === store.state.ResultCode.NO_AUTH) {
         localStorage.removeItem("loginUser");
         store.state.layer.alert("登陆失效", {icon: 0});

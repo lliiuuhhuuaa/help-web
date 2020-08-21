@@ -32,7 +32,7 @@
                         <div style="clear: both"></div>
                     </div>
                 </div>
-                <div v-else>{{item.tag}}</div>
+                <div v-else><div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div><div v-else>{{item.tag}}</div></div>
             </div>
         </MessageLoad>
     </div>
@@ -63,17 +63,18 @@
                 loaded: false,
                 iPage: 1,
                 iPageSize: 10,
+                constant: this.$store.state
             }
         },
         mounted() {
-                this.Emit.$on("fromFooter", this.selfSendMsg),
+            this.Emit.$on("fromFooter", this.selfSendMsg),
                 this.Emit.$on("bodyToBottom", this.scrollBottom)
         },
         methods: {
-            initData:function(){
+            initData: function () {
                 this.$ajax.post("/web/merchant/getHelpIndividuality", {}).then(res => {
                     res = res.data;
-                    if(res.helpTags!=null&&res.helpTags.length>0){
+                    if (res.helpTags != null && res.helpTags.length > 0) {
                         //添加推荐问题
                         let reply = {
                             class: this.MsgClass.ADVERTISING,
@@ -88,10 +89,9 @@
                         this.advertisingIndex = 0;
                         this.msgList.push(reply);
                     }
-                    if(res.commons){
-                        this.$store.commit("updateState",{commons:res.commons.split(",")});
+                    if (res.commons) {
+                        this.$store.commit("updateState", {commons: res.commons.split(",")});
                     }
-                    console.log(res);
                     let reply = {
                         class: this.MsgClass.REPLY,
                         tag: res.greeting,
@@ -121,31 +121,59 @@
                 this.msgList.push(reply);
                 this.scrollBottom();
                 //请求发送
-                this.requestSend(obj.tag,reply);
+                this.requestSend(obj.tag, reply);
             },
             //请求发送消息
-            requestSend: function (tag,reply) {
-                this.$ajax.post("/web/help/tag", {tag:tag}).then(res => {
+            requestSend: function (tag, reply) {
+                this.$ajax.post("/web/help/tag", {tag: tag}).then(res => {
                     res = res.data;
-                    reply.tag = res.reply;
+                    console.log(res)
+                    if (res.state === this.constant.MsgState.DANGER) {
+                        reply.tag = res.reply;
+                        return;
+                    }
+                    if (res.state === this.constant.MsgState.WAIT) {
+                        reply.tag = "智能助手解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
+                        return;
+                    }
+                    if (res.state === this.constant.MsgState.OK) {
+                        if (res.storageType === this.constant.StorageType.DB) {
+                            reply.tag = res.reply;
+                            return;
+                        }
+                        if (res.storageType === this.constant.StorageType.FILE) {
+                            this.$ajax.get("/other/file/getGeneralFile/"+res.reply,{}).then(res => {
+                                reply['type'] = 'html';
+                                reply.tag = res;
+                            });
+                            return;
+                        }
+                        if (res.storageType === this.constant.StorageType.URL) {
+                            reply.tag = "正在为您访问:"+res.reply;
+                            let urlData = {
+                                class: this.MsgClass.REPLY,
+                                tag: '<iframe src="'+res.reply+'" width="100%" height="400px" frameborder="no" border="0" marginwidth="0" marginheight="0" scrolling="auto" allowtransparency="yes">',
+                                type: 'html',
+                                id: +new Date()
+                            };
+                            this.msgList.push(urlData);
 
+                        }
+
+                    }
+                    if (res.state === this.constant.MsgState.RECOMMEND) {
+                        reply.tag = "我猜您是要问这些吗?";
+                        let recommend = {
+                            class: this.MsgClass.RECOMMEND,
+                            data: {
+                                title: "为您找到相关问题",
+                                content: res.result
+                            },
+                            id: +new Date()
+                        };
+                        this.msgList.push(recommend);
+                    }
                 });
-                // setTimeout(function () {
-                //
-                //     if (Math.random() * 10 > 5) {
-                //         //发送消息
-                //         let reply = {
-                //             class: _this.MsgClass.RECOMMEND,
-                //             data: {
-                //                 "title": "你是要找这些吗,相关问题",
-                //                 "content": ["如何变富?", "如何变牛逼", "baidu.com如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼如何变牛逼"]
-                //             },
-                //             id: +new Date()
-                //         };
-                //         _this.msgList.push(reply);
-                //         _this.scrollBottom();
-                //     }
-                // }, 1000);
             },
             //切换显示列表
             switchList: function (index) {
@@ -184,16 +212,21 @@
                 }, 100);
             }
         },
-        computed:{
-            login(){
-                return this.$store.state.login;
+        computed: {
+            login() {
+                return this.constant.login;
             }
         },
-        watch:{
-            login:function(val){
-                if(val){
+        watch: {
+            login: function (val) {
+                if (val) {
                     //登陆成功初始化数据
                     this.initData();
+                }
+            },
+            msgList: function () {
+                if (this.scrollState) {
+                    this.scrollBottom();
                 }
             }
         }
@@ -344,12 +377,15 @@
         width: 20px;
         line-height: 30px;
         text-align: center;
-        text-shadow: 0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa, 0 6px 1px rgba(0,0,0,0.1), 0 0 5px rgba(0,0,0,0.1),0 1px 3px rgba(0,0,0,0.3),0 3px 5px rgba(0,0,0,0.2),0 5px 10px rgba(0,0,0,0.25);
+        text-shadow: 0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa, 0 6px 1px rgba(0, 0, 0, 0.1), 0 0 5px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.3), 0 3px 5px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.25);
     }
 
     .advertising-list-right {
         width: calc(100% - 50px);
         height: 100%;
         float: right;
+    }
+    .html-div{
+        overflow: auto;
     }
 </style>
