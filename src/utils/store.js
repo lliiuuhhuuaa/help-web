@@ -18,7 +18,8 @@ const store = new Vuex.Store({
             DANGER:0, // 敏感词拦截
             WAIT:1, // 提交客服等待回复
             RECOMMEND:2, // 推荐问题
-            OK:10 // 正常
+            OK:10, // 正常
+            STAFF:4, // 人工
         },
         StorageType:{
             DB:1, // 数据库
@@ -26,7 +27,11 @@ const store = new Vuex.Store({
             URL:3, // url
             PC:4, //爬虫1
             PC2:5, //爬虫2
-            RECOMMEND:6 //推荐
+            RECOMMEND:6, //推荐
+            HTML:7 //html
+        },
+        StaffType:{
+            WAIT:1, // 等待
         },
         //待发送消息
         waitSend:{}

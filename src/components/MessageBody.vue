@@ -34,13 +34,14 @@
                 </div>
                 <div v-else>
                     <div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div>
-                    <div class="html-div" v-if="item.type==='ask_answer'">
+                    <div class="html-div" v-else-if="item.type==='ask_answer'">
                         {{item.tag[0]}}
                         <button class="get-answer" @click="$event.currentTarget.innerText=item.tag[1]">查看答案</button>
                     </div>
                     <div v-else>{{item.tag}}</div>
                 </div>
             </div>
+            <div class="staff-wait" v-if="this.staffWaitCount>0"><span>人工客服排队:您当前在第 <span>{{this.staffWaitCount}}</span> 位</span></div>
         </MessageLoad>
     </div>
 
@@ -70,8 +71,17 @@
                 loaded: false,
                 iPage: 1,
                 iPageSize: 10,
-                constant: this.$store.state
+                constant: this.$store.state,
+                staffWaitCount: 1,
             }
+        },
+        created() {
+            let _this = this;
+            window.SD = function (tag) {
+                _this.selfSendMsg({'tag': tag})
+            }
+            //检查排队
+            this.checkWaitList();
         },
         methods: {
             initData: function () {
@@ -136,12 +146,17 @@
                         return;
                     }
                     if (res.state === this.constant.MsgState.WAIT) {
-                        reply.tag = "小化助手解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
+                        reply.tag = "小六子解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
                         this.scrollBottom();
                         return;
                     }
                     if (res.state === this.constant.MsgState.OK) {
-                        this.showMsgHandle(reply,res);
+                        this.showMsgHandle(reply, res);
+                        this.scrollBottom();
+                        return;
+                    }
+                    if (res.state === this.constant.MsgState.STAFF) {
+                        this.showStaffHandle(reply, res);
                         this.scrollBottom();
                         return;
                     }
@@ -158,11 +173,19 @@
                         this.msgList.push(recommend);
                         this.scrollBottom();
                     }
+                }).catch(e => {
+                    reply.tag = e.message;
+                    this.scrollBottom();
                 });
             },
-            showMsgHandle:function(reply,res){
+            showMsgHandle: function (reply, res) {
                 if (res.storageType === this.constant.StorageType.DB || res.storageType === this.constant.StorageType.PC) {
                     reply.tag = res.reply;
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.HTML) {
+                    reply.tag = res.reply;
+                    reply['type'] = 'html';
                     return;
                 }
                 if (res.storageType === this.constant.StorageType.FILE) {
@@ -200,6 +223,13 @@
                     return;
                 }
             },
+            showStaffHandle: function (reply, res) {
+                if (res.storageType === this.constant.StaffType.WAIT) {
+                    reply.tag = "请稍等,正在等待分配客服,您可以先描述问题,客服分配后会马上看到";
+                    this.staffWaitCount = res.reply;
+                    return;
+                }
+            },
             //切换显示列表
             switchList: function (index) {
                 this.advertisingIndex = index;
@@ -233,12 +263,23 @@
                 let el = document.getElementById("refresh-scroll");
                 el.scrollTop = el.scrollHeight;
                 let count = 10;
-                let interval = setInterval(()=>{
+                let interval = setInterval(() => {
                     el.scrollTop = el.scrollHeight;
-                    if(--count<0){
+                    if (--count < 0) {
                         clearInterval(interval);
                     }
-                },10)
+                }, 10)
+            },
+            //检查排队情况
+            checkWaitList:function () {
+                this.$ajax.post("/web/staff/online/getCurrWaitListIndex", {}).then(res => {
+                    this.staffWaitCount = res.data;
+                    if(this.staffWaitCount>0){
+                        setTimeout(()=>{
+                            this.checkWaitList();
+                        },5000)
+                    }
+                });
             }
         },
         computed: {
@@ -423,6 +464,7 @@
         height: 100%;
         float: right;
     }
+
     .html-div {
         overflow: auto;
     }
@@ -438,5 +480,18 @@
         outline: none;
         box-shadow: none;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+    .staff-wait{
+
+    }
+    .staff-wait>span{
+        background: rgba(120, 200, 240, 0.9);
+        color: #FFF;
+        padding:5px;
+        border-radius: 5px;
+    }
+    .staff-wait>span>span{
+        font-weight: bold;
+        font-size: 20px;
     }
 </style>

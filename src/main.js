@@ -19,3 +19,13 @@ store.commit("updateState",{"layer":Vue.prototype.$layer});
 new Vue({
   render: h => h(App),
 }).$mount('#app');
+//自定义post
+// Vue.prototype.post = function (url,data,success) {
+//   axios.post(url,data,function (res) {
+//     if (res.data.code === store.state.ResultCode.ERROR) {
+//         throw new Error(res);
+//     }else{
+//       success(res);
+//     }
+//   })
+// }

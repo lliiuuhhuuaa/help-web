@@ -33,7 +33,7 @@ axios.interceptors.request.use(config => {
     // 关闭loading
    // store.commit("updateState", {loading: false});
     store.state.layer.msg("网络繁忙,请稍候重试");
-    return Promise.reject(error)
+    return new Promise(() => {error});
 });
 
 // 接收
@@ -46,20 +46,18 @@ axios.interceptors.response.use(response => {
         store.state.layer.alert("登陆失效", {icon: 0});
         store.commit("updateState", {login: true});
         //中止执行
-        return new Promise(() => {
-        });
+        return new Promise(() => {});
     }
     if (response.data.code === store.state.ResultCode.ERROR) {
-        store.state.layer.alert(response.data.msg, {icon: 0});
+       // store.state.layer.alert(response.data.msg, {icon: 0});
         //中止执行
-        return new Promise(() => {
-        });
+        throw new Error(response.data.msg);
+      //  return new Promise(response.data);
     }
     if (response.data.code === store.state.ResultCode.NO_PERMISSION) {
         store.state.layer.alert("权限不足", {icon: 0});
         //中止执行
-        return new Promise(() => {
-        });
+        return new Promise(() => {});
     }
     // 关闭loading
     //store.commit("updateState", {loading: false});
@@ -78,6 +76,6 @@ axios.interceptors.response.use(response => {
     } else {
         store.state.layer.msg("系统繁忙,请稍候重试");
     }
-    return Promise.reject(error)
+    return new Promise(() => {});
 });
 export default axios;
