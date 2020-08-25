@@ -7,9 +7,9 @@
         <section class="inner" :style="{ transform: 'translate3d(0, ' + top + 'px, 0)' }">
             <header class="pull-refresh">
                 <slot name="pull-refresh">
-                    <span class="down-tip">下拉加载聊天记录</span>
+                    <span class="down-tip">{{downText}}</span>
                     <span class="up-tip">松开加载</span>
-                    <span class="refresh-tip">加载中...</span>
+                    <span class="refresh-tip">{{refreshText}}</span>
                 </slot>
             </header>
             <slot></slot>
@@ -41,12 +41,14 @@
                 state: 0,
                 startY: 0,
                 touching: false,
+                refreshText:'加载中...',
+                downText:'下拉加载聊天记录',
             }
         },
         methods: {
             touchStart(e) {
-                this.startY = e.targetTouches[0].pageY
-                this.startScroll = this.$el.scrollTop || 0
+                this.startY = e.targetTouches[0].pageY;
+                this.startScroll = this.$el.scrollTop || 0;
                 this.touching = true
             },
             touchMove(e) {
@@ -54,8 +56,8 @@
                     return
                 }
                 let diff = e.targetTouches[0].pageY - this.startY - this.startScroll
-                if (diff > 0) e.preventDefault()
-                this.top = Math.pow(diff, 0.8) + (this.state === 2 ? this.offset : 0)
+                if (diff > 0) e.preventDefault();
+                this.top = Math.pow(diff, 0.8) + (this.state === 2 ? this.offset : 0);
 
                 if (this.state === 2) { // in refreshing
                     return
@@ -68,27 +70,35 @@
             },
             touchEnd() {
                 if (!this.enableRefresh) return
-                this.touching = false
+                this.touching = false;
                 if (this.state === 2) { // in refreshing
-                    this.state = 2
+                    this.state = 2;
                     this.top = this.offset
                     return
                 }
                 if (this.top >= this.offset) { // do refresh
                     this.refresh()
                 } else { // cancel refresh
-                    this.state = 0
+                    this.state = 0;
                     this.top = 0
                 }
             },
             refresh() {
-                this.state = 2
-                this.top = this.offset
+                this.state = 2;
+                this.top = this.offset;
                 this.onRefresh(this.refreshDone)
             },
-            refreshDone() {
-                this.state = 0
-                this.top = 0
+            refreshDone(msg) {
+                this.refreshText = msg;
+                this.downText = "";
+                setTimeout(()=>{
+                    this.state = 0;
+                    this.top = 0
+                },500);
+                setTimeout(()=>{
+                    this.refreshText = "加载中...";
+                    this.downText = "下拉加载聊天记录";
+                },1000)
             },
         }
     }

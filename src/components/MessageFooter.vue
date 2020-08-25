@@ -1,5 +1,6 @@
 <template>
-    <div class="footer" v-bind:class="{'focusState':keyboard}">
+    <div class="footer" v-bind:class="{'focusState':keyboard,'staff-wait-body':this.constant.staffWaitCount>0}">
+        <div class="staff-wait" v-if="this.constant.staffWaitCount>0"><span>人工客服排队:您当前在第 <span>{{this.constant.staffWaitCount}}</span> 位<button class="exit-list" @click="exitWaitList">退出排队</button></span></div>
         <ul class="common-word">
             <li v-for="item in this.$store.state.commons" :key="item" @click="sendQuickMsg(item)">
                 {{item}}
@@ -25,44 +26,31 @@
                 prevSendTime:0,
                 //是否正在使用键盘
                 keyboard:false,
+                constant: this.$store.state,
+                timeOut:null
             }
+        },
+        created() {
+            //检查排队
+            this.checkWaitList();
+        },
+        computed: {
+            //等待数变更
+            waitUpdate() {
+                return this.constant.staffWaitCount;
+            },
         },
         watch: {
             //输入框内容变更
             content: function (val) {
                 this.send = val.trim() !== '';
+            },
+            waitUpdate: function (val,old) {
+                if(old<1&&val>0){
+                    this.checkWaitList();
+                }
             }
         },
-        // created() {
-        //     let _this = this;
-        //     //let clientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-        //     let clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
-        //     let y = document.getElementsByClassName("input-text")[0].getBoundingClientRect().y
-        //     window.addEventListener('resize', function () {
-        //         //let nowClientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-        //         //let nowClientHeight = document.documentElement.clientHeight || document.body.clientHeight;
-        //         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {//因为ios有自带的底部高度
-        //            alert(y)
-        //            alert(document.activeElement.getBoundingClientRect().y)
-        //            alert(y-document.activeElement.getBoundingClientRect().y)
-        //             let height = clientHeight-document.activeElement.getBoundingClientRect().y;
-        //             this.footMargin = height;
-        //             /*_this.keyboard = true;*/
-        //             _this.Emit.$emit("appToBottom");
-        //             _this.Emit.$emit("bodyToBottom");
-        //             alert(height);
-        //             //处理部分输入框遮挡的问题
-        //             /*if(clientHeight-nowClientHeight<200){
-        //                 _this.keyboard = true;
-        //                 _this.Emit.$emit("appToBottom");
-        //                 _this.Emit.$emit("bodyToBottom");
-        //             }*/
-        //
-        //         }else{
-        //             _this.keyboard = false;
-        //         }
-        //     })
-        // },
         methods: {
             //发送消息
             sendMsg: function () {
@@ -88,6 +76,31 @@
                 this.prevSendTime = time;
                 //发送
                 this.$store.commit("updateState", {waitSend: {tag:item}});
+            },
+            //检查排队情况
+            checkWaitList:function () {
+                if(this.timeout){
+                    clearTimeout(this.timeout);
+                }
+                this.$ajax.post("/web/staff/online/getCurrWaitListIndex", {}).then(res => {
+                    this.constant.staffWaitCount = res.data;
+                    if(res.data>0){
+                        this.constant.staffState = true;
+                        this.timeout = setTimeout(()=>{
+                            this.checkWaitList();
+                        },5000)
+                    }
+                });
+            },
+            //退出排队
+            exitWaitList:function () {
+                this.$ajax.post("/web/staff/online/exitWaitList", {}).then(() => {
+                    this.$store.commit("updateState", {staffWaitCount:0});
+                    this.$store.commit("updateState", {staffState:false});
+                    if(this.timeout){
+                        clearTimeout(this.timeout);
+                    }
+                });
             }
         }
     }
@@ -102,6 +115,9 @@
         right: 0;
         height: 100px;
         background: rgba(65, 152, 199, 0.1);
+    }
+    .footer.staff-wait-body{
+        height: 130px;
     }
     .focusState{
         margin-bottom: 70px;
@@ -153,5 +169,31 @@
     .send-button.active {
         background: url("../assets/img/send.svg") no-repeat center;
         background-size: 100% 100%;
+    }
+    .staff-wait{
+        padding-top: 10px;
+    }
+    .staff-wait>span{
+        background: rgba(120, 200, 240,.9);
+        color: #FFF;
+        padding:5px;
+        border-radius: 5px;
+    }
+    .staff-wait>span>span{
+        font-weight: bold;
+        font-size: 20px;
+    }
+    .exit-list{
+        margin-left:5px;
+        padding: 3px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.9);
+        color:rgb(120, 200, 240);
+        outline: none;
+        box-shadow: none;
+        font-weight: bold;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     }
 </style>

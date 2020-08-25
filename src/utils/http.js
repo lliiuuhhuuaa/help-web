@@ -57,7 +57,7 @@ axios.interceptors.response.use(response => {
     if (response.data.code === store.state.ResultCode.NO_PERMISSION) {
         store.state.layer.alert("权限不足", {icon: 0});
         //中止执行
-        return new Promise(() => {});
+        throw new Error("权限不足");
     }
     // 关闭loading
     //store.commit("updateState", {loading: false});
@@ -69,13 +69,17 @@ axios.interceptors.response.use(response => {
     let code = resp ? resp.status : null;
     if (code === 500) {
         store.state.layer.msg("系统繁忙,请稍候重试");
+        throw new Error("系统繁忙,请稍候重试");
     } else if (code === 502) {
         store.state.layer.msg("网络繁忙,请稍候重试");
+        throw new Error("系网络繁忙,请稍候重试");
     } else if (code === 404) {
         store.state.layer.msg("系统被外星人带走了,正在抢救");
+        throw new Error("系统被外星人带走了,正在抢救");
     } else {
         store.state.layer.msg("系统繁忙,请稍候重试");
+        throw new Error("系统繁忙,请稍候重试");
     }
-    return new Promise(() => {});
+
 });
 export default axios;

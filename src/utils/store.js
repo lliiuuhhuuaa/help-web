@@ -32,9 +32,14 @@ const store = new Vuex.Store({
         },
         StaffType:{
             WAIT:1, // 等待
+            SEND:2 //已发送
         },
         //待发送消息
-        waitSend:{}
+        waitSend:{},
+        //等待人数
+        staffWaitCount: 0,
+        //人工客服状态
+        staffState:false
     },
     mutations: {
         updateState(obj,param){

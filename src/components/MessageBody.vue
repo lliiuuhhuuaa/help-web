@@ -1,5 +1,5 @@
 <template>
-    <div class="body" v-bind:class="{'hide-header':hideHeader}">
+    <div class="body" v-bind:class="{'hide-header':hideHeader,'staff-wait-state':this.constant.staffWaitCount>0}">
         <MessageLoad :on-refresh="onRefresh" :on-infinite="onInfinite">
             <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" v-bind:key="item.id">
                 <div v-if="item.class==MsgClass.RECOMMEND">
@@ -41,7 +41,6 @@
                     <div v-else>{{item.tag}}</div>
                 </div>
             </div>
-            <div class="staff-wait" v-if="this.staffWaitCount>0"><span>人工客服排队:您当前在第 <span>{{this.staffWaitCount}}</span> 位</span></div>
         </MessageLoad>
     </div>
 
@@ -69,10 +68,11 @@
                 msgList: [],
                 scrollState: true, // 是否可以滑动
                 loaded: false,
-                iPage: 1,
-                iPageSize: 10,
+                page: 0,
+                rows: 20,
                 constant: this.$store.state,
-                staffWaitCount: 1,
+                staffState: false,
+                listMore: true,
             }
         },
         created() {
@@ -80,8 +80,6 @@
             window.SD = function (tag) {
                 _this.selfSendMsg({'tag': tag})
             }
-            //检查排队
-            this.checkWaitList();
         },
         methods: {
             initData: function () {
@@ -111,6 +109,15 @@
                         id: res.createDate
                     };
                     this.msgList.push(reply);
+                    //检查是否处理等待人工
+                    if (this.constant.staffWaitCount > 0) {
+                        let reply = {
+                            class: this.MsgClass.REPLY,
+                            tag: '正在等待分配客服,您可以先描述问题,客服分配后能及时了解问题',
+                        };
+                        this.msgList.push(reply);
+                        this.scrollBottom();
+                    }
                 });
             },
             //点击推荐
@@ -121,24 +128,25 @@
             selfSendMsg: function (obj) {
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
-                obj.replyId = obj.id + 1;
                 //显示消息
                 this.msgList.push(obj);
                 this.scrollBottom();
                 //发送消息
-                let reply = {
-                    class: this.MsgClass.REPLY,
-                    tag: '正在输入...',
-                    id: +obj.replyId
-                };
-                this.msgList.push(reply);
-                this.scrollBottom();
+                let reply = null;
+                if (!this.constant.staffState) {
+                    reply = {
+                        class: this.MsgClass.REPLY,
+                        tag: '正在输入...',
+                    };
+                    this.msgList.push(reply);
+                    this.scrollBottom();
+                }
                 //请求发送
-                this.requestSend(obj.tag, reply);
+                this.requestSend(obj, reply);
             },
             //请求发送消息
-            requestSend: function (tag, reply) {
-                this.$ajax.post("/web/help/tag", {tag: tag}).then(res => {
+            requestSend: function (obj, reply) {
+                this.$ajax.post("/web/help/tag", {tag: obj.tag}).then(res => {
                     res = res.data;
                     if (res.state === this.constant.MsgState.DANGER) {
                         reply.tag = res.reply;
@@ -156,7 +164,7 @@
                         return;
                     }
                     if (res.state === this.constant.MsgState.STAFF) {
-                        this.showStaffHandle(reply, res);
+                        this.showStaffHandle(reply, res, obj);
                         this.scrollBottom();
                         return;
                     }
@@ -174,8 +182,14 @@
                         this.scrollBottom();
                     }
                 }).catch(e => {
-                    reply.tag = e.message;
-                    this.scrollBottom();
+                    if (reply != null) {
+                        //回复消息不为空
+                        reply.tag = e.message;
+                        this.scrollBottom();
+                    }
+                    //回复消息为空时,操作本消息
+                    obj.tag = "<s>" + obj.tag + "</s><span style='color:#D00;font-size: 14px'>(" + e.message + ")</span>";
+                    obj.type = 'html';
                 });
             },
             showMsgHandle: function (reply, res) {
@@ -223,12 +237,19 @@
                     return;
                 }
             },
-            showStaffHandle: function (reply, res) {
+            showStaffHandle: function (reply, res, obj) {
                 if (res.storageType === this.constant.StaffType.WAIT) {
-                    reply.tag = "请稍等,正在等待分配客服,您可以先描述问题,客服分配后会马上看到";
-                    this.staffWaitCount = res.reply;
+                    reply.tag = "请稍等,正在等待分配客服,您可以先描述问题,客服分配后能及时了解问题";
+                    this.constant.staffWaitCount = res.reply;
+                    this.constant.staffState = true;
                     return;
                 }
+                if (res.storageType === this.constant.StaffType.SEND) {
+                    obj.id = res.result;
+                    obj.staff = 1;
+                    return;
+                }
+
             },
             //切换显示列表
             switchList: function (index) {
@@ -236,24 +257,51 @@
                 //更新下标，强制更新视图
                 this.$forceUpdate();
             },
-            onScroll: function (e) {
-                console.log(e.target.scrollTop);
-            },
-            //加载更多
-            loadMore: function (done) {
-                let vm = this;
-                setTimeout(() => done(), 1000);
-                console.log(vm)
-                console.log(done)
-            },
-            getList() {
-
+            //加载历史记录
+            getList: function (callback) {
+                let lastId = null;
+                for (let key in this.msgList) {
+                    if (this.msgList[key].staff) {
+                        lastId = this.msgList[key].id;
+                    }
+                }
+                this.$ajax.post("/web/staff/online/listHelpMsg", {
+                    page: this.page + 1,
+                    rows: this.rows,
+                    lastId: lastId
+                }).then(res => {
+                    let data = res.data.rows;
+                    if (data == null || data.length < 1) {
+                        this.listMore = false;
+                        callback("已经加载完了");
+                        return;
+                    }
+                    this.page = res.data.page;
+                    let msgObj = null;
+                    let temp = null;
+                    for (let i = data.length - 1; i >= 0; i--) {
+                        temp = data[i];
+                        msgObj = {
+                            id: temp.id,
+                            class: temp.direct == 1 ? this.MsgClass.SELF : this.MsgClass.REPLY,
+                            tag: temp.msg+"<span style='font-size: 14px;float:right'>"+new Date(temp.createDate).format('yyyy-MM-dd HH:mm:ss')+"</span>",
+                            type:'html'
+                        };
+                        this.msgList.splice(0, 0, msgObj);
+                    }
+                    callback("加载成功");
+                    this.scrollState = false;
+                    setTimeout(() => {
+                        this.scrollState = true;
+                    }, 1000);
+                });
             },
             onRefresh(done) {
-                this.getList();
-
-                done() // call done
-
+                if (this.listMore) {
+                    this.getList(done);
+                }else{
+                    done("真的没有了");
+                }
             },
             onInfinite(done) {
                 setTimeout(() => done(), 1000);
@@ -269,17 +317,6 @@
                         clearInterval(interval);
                     }
                 }, 10)
-            },
-            //检查排队情况
-            checkWaitList:function () {
-                this.$ajax.post("/web/staff/online/getCurrWaitListIndex", {}).then(res => {
-                    this.staffWaitCount = res.data;
-                    if(this.staffWaitCount>0){
-                        setTimeout(()=>{
-                            this.checkWaitList();
-                        },5000)
-                    }
-                });
             }
         },
         computed: {
@@ -290,7 +327,7 @@
             //待发送更新
             waitSend() {
                 return this.constant.waitSend;
-            }
+            },
         },
         watch: {
             login: function (val) {
@@ -307,7 +344,7 @@
             //待发送更新
             waitSend: function (obj) {
                 this.selfSendMsg(obj);
-            }
+            },
         }
     }
 </script>
@@ -323,8 +360,12 @@
         -ms-overflow-style: none; /* IE 10+ */
     }
 
-    .body.hide-header {
-        height: calc(100vh - 100px);
+    .body.hide-header.staff-wait-state {
+        height: calc(100vh - 130px);
+    }
+
+    .body.staff-wait-state {
+        height: calc(100vh - 180px);
     }
 
     .body::-webkit-scrollbar {
@@ -480,18 +521,5 @@
         outline: none;
         box-shadow: none;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-    }
-    .staff-wait{
-
-    }
-    .staff-wait>span{
-        background: rgba(120, 200, 240, 0.9);
-        color: #FFF;
-        padding:5px;
-        border-radius: 5px;
-    }
-    .staff-wait>span>span{
-        font-weight: bold;
-        font-size: 20px;
     }
 </style>
