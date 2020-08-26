@@ -43,7 +43,9 @@ const store = new Vuex.Store({
         //等待人数
         staffWaitCount: 0,
         //人工客服状态
-        staffState:false
+        staffState:false,
+        //激活用户ID
+        activeUserId:-1,
     },
     mutations: {
         updateState(obj,param){

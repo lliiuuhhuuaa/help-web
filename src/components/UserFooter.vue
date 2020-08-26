@@ -27,7 +27,7 @@
                 //是否正在使用键盘
                 keyboard:false,
                 constant: this.$store.state,
-                timeOut:null
+                timeout:null
             }
         },
         created() {
@@ -80,15 +80,26 @@
             //检查排队情况
             checkWaitList:function () {
                 if(this.timeout){
-                    clearTimeout(this.timeout);
+                    clearInterval(this.timeout);
+                }
+                this.getCurrWaitListIndex();
+                this.timeout = setInterval(()=>{
+                    this.getCurrWaitListIndex();
+                },5000);
+            },
+            getCurrWaitListIndex:function(){
+                if(!this.constant.login){
+                    if(this.timeout){
+                        clearInterval(this.timeout);
+                    }
+                    return;
                 }
                 this.$ajax.post("/web/staff/online/getCurrWaitListIndex", {}).then(res => {
                     this.constant.staffWaitCount = res.data;
                     if(res.data>0){
                         this.constant.staffState = true;
-                        this.timeout = setTimeout(()=>{
-                            this.checkWaitList();
-                        },5000)
+                    }else{
+                        clearInterval(this.timeout);
                     }
                 });
             },
@@ -98,7 +109,7 @@
                     this.$store.commit("updateState", {staffWaitCount:0});
                     this.$store.commit("updateState", {staffState:false});
                     if(this.timeout){
-                        clearTimeout(this.timeout);
+                        clearInterval(this.timeout);
                     }
                 });
             }

@@ -1,37 +1,83 @@
 <template>
     <div class="head">
         <div class="staff-state">当前服务人数 <span>{{userList.length}}</span> 位 , 排队中人数 <span>{{waitCount}}</span> 位</div>
-        <ul id="refresh-scroll" class="user-item-body">
-            <li class="user-item" v-for="item in userList" v-bind:key="item.id" @click="activeId=item.id"  v-bind:class="{'active':activeId===item.id}">{{item.username}}</li>
-            <li class="user-item add-user" @click="addUser" v-if="waitCount>0">✚</li>
+        <ul id="head-scroll" class="user-item-body">
+            <li class="no-user" v-if="userList.length<1&&waitCount<0">当前没有用户需要帮助</li>
+            <li class="user-item" v-for="item in userList" v-bind:key="item.userId" @click="constant.activeUserId===item.userId?constant.activeUserId=0:constant.activeUserId=item.userId"  v-bind:class="{'active':constant.activeUserId===item.userId}">{{item.username}}</li>
+            <li class="user-item add-user" @click="getWaitUser" v-if="waitCount>0">✚</li>
         </ul>
     </div>
 </template>
 
 <script>
     export default {
-        name: 'MessageHeader',
+        name: 'StaffHeader',
         data(){
           return{
-            activeId:0,
-            userList:[{id:1,username:"1号用户11"},{id:2,username:"2号用户2"},{id:3,username:"3号用户444"},{id:4,username:"4号用户43534"},{id:5,username:"5号用户9781"}],
-            waitCount:2,
+            userList:[],
+            waitCount:0,
+            constant:this.$store.state,
           }
         },
+
+        created() {
+            //获取当前排队数
+            this.getUserListInfo();
+            //获取当前聊天用户
+            this.getUserChatListInfo();
+        },
       methods:{
-          addUser:function () {
-            this.waitCount--;
-            let data = {
-              id: +new Date(),
-              username: 'x号用户'
-            };
-            this.activeId = data.id;
-            this.userList.push(data);
-            this.scrollBottom();
+          //获取用户排队信息
+          getUserListInfo:function(){
+              this.getCurrWaitCount();
+              if(timer){
+                  clearInterval(timer);
+              }
+              let timer = setInterval(()=>{
+                  if(!this.constant.login){
+                      clearInterval(timer);
+                      return;
+                  }
+                  this.getCurrWaitCount();
+              },6000);
+
+          },
+          //获取聊天用户信息
+          getUserChatListInfo:function(){
+              this.getCurrChatUser();
+              if(timer){
+                  clearInterval(timer);
+              }
+              let timer = setInterval(()=>{
+                  if(!this.constant.login){
+                      clearInterval(timer);
+                      return;
+                  }
+                  this.getCurrChatUser();
+              },5000);
+
+          },
+          //获取当前排队数
+          getCurrWaitCount:function(){
+              this.$ajax.post("/staff/online/getCurrWaitCount", {}).then(res => {
+                  this.waitCount = res.data==null?0:res.data;
+              });
+          },
+          //获取当前聊天用户
+          getCurrChatUser:function(){
+              this.$ajax.post("/staff/online/getCurrChatUser", {}).then(res => {
+                  this.userList = res.data==null?[]:res.data;
+              })
+          },
+          //获取等待用户
+          getWaitUser:function(){
+              this.$ajax.post("/staff/online/getWaitUser", {animation:this.constant.Animation.PART,alertError:true}).then(() => {
+                  this.getUserChatListInfo();
+              })
           },
         //滚动到底部
         scrollBottom: function () {
-          let el = document.getElementById("refresh-scroll");
+          let el = document.getElementById("head-scroll");
           el.scrollLeft = el.scrollWidth;
           let count = 10;
           let interval = setInterval(() => {
@@ -50,13 +96,13 @@
     .head {
         color: #FFF;
         background: rgba(65, 152, 199, 0.3);
-        height: auto;
+        height: 80px;
         width: 100%;
-        padding: 5px 0;
         position: relative;
     }
 
     .staff-state {
+        height: 30px;
         color: #555;
         padding: 5px;
     }
@@ -68,7 +114,7 @@
     }
 
     .user-item-body {
-        height: 100%;
+        height: 40px;
         padding: 0;
         margin: 0;
         list-style: none;
@@ -100,5 +146,11 @@
     .user-item.add-user {
         background: #FFF;
         color: #999;
+        width: 30px;
+    }
+    .no-user{
+        width: 100%;
+        text-align: center;
+        color:rgb(65, 152, 199);
     }
 </style>

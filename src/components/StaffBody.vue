@@ -1,6 +1,12 @@
 <template>
-    <div class="body" v-bind:class="{'staff-wait-state':this.constant.staffWaitCount>0}">
-        <MessageLoad :on-refresh="onRefresh" :on-infinite="onInfinite">
+    <div class="body">
+        <div class="no-user-body" v-if="this.constant.activeUserId<1">
+            <div class="mete-item handle"><i></i><b>处理离线问题</b></div>
+            <div class="mete-item entering"><i></i><b>录入帮助词库</b></div>
+           <div class="mete-item record"><i></i><b>查看聊天记录</b></div>
+           <div class="mete-item exit" @click="exit"><i></i><b>退出登陆</b></div>
+        </div>
+        <MessageLoad :on-refresh="onRefresh" :on-infinite="onInfinite" v-else>
             <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" v-bind:key="item.id">
                 <div v-if="item.class==MsgClass.RECOMMEND">
                     <div class="recommend-title">{{item.data.title}}</div>
@@ -50,7 +56,7 @@
     import MessageLoad from "./MessageLoad";
 
     export default {
-        name: 'MessageBody',
+        name: 'StaffBody',
         props: {
         },
         components: {
@@ -72,6 +78,7 @@
                 constant: this.$store.state,
                 staffState: false,
                 listMore: true,
+                waitAskList:[]
             }
         },
         created() {
@@ -81,44 +88,6 @@
             }
         },
         methods: {
-            initData: function () {
-                this.$ajax.post("/web/merchant/getHelpIndividuality", {}).then(res => {
-                    res = res.data;
-                    if (res.helpTags != null && res.helpTags.length > 0) {
-                        //添加推荐问题
-                        let reply = {
-                            class: this.MsgClass.ADVERTISING,
-                            data: {
-                                img: res.advertising,
-                                content: res.helpTags
-                            },
-                            id: +new Date()
-                        };
-                        this.advertising = reply.data.content;
-
-                        this.advertisingIndex = 0;
-                        this.msgList.push(reply);
-                    }
-                    if (res.commons) {
-                        this.$store.commit("updateState", {commons: res.commons.split(",")});
-                    }
-                    let reply = {
-                        class: this.MsgClass.REPLY,
-                        tag: res.greeting,
-                        id: res.createDate
-                    };
-                    this.msgList.push(reply);
-                    //检查是否处理等待人工
-                    if (this.constant.staffWaitCount > 0) {
-                        let reply = {
-                            class: this.MsgClass.REPLY,
-                            tag: '正在等待分配客服,您可以先描述问题,客服分配后能及时了解问题',
-                        };
-                        this.msgList.push(reply);
-                        this.scrollBottom();
-                    }
-                });
-            },
             //点击推荐
             clickRecommend: function (item) {
                 this.selfSendMsg({'tag': item})
@@ -316,25 +285,23 @@
                         clearInterval(interval);
                     }
                 }, 10)
+            },
+            exit:function () {
+                this.$ajax.post("/user/logout", {},{animation:this.constant.Animation.PART,ignore:true}).then(() => {
+                    localStorage.removeItem("tk");
+                    this.constant.login = false;
+                    this.$router.push({path:'/login'})
+                });
+
             }
         },
         computed: {
-            //登陆状态更新
-            login() {
-                return this.constant.login;
-            },
             //待发送更新
             waitSend() {
                 return this.constant.waitSend;
             },
         },
         watch: {
-            login: function (val) {
-                if (val) {
-                    //登陆成功初始化数据
-                    this.initData();
-                }
-            },
             msgList: function () {
                 if (this.scrollState) {
                     this.scrollBottom();
@@ -353,7 +320,7 @@
     .body {
         background: rgba(65, 152, 199, 0.1);
         width: 100%;
-        height: calc(100vh - 150px);
+        height: calc(100vh - 180px);
         overflow: hidden;
         scrollbar-width: none; /* firefox */
         -ms-overflow-style: none; /* IE 10+ */
@@ -520,5 +487,44 @@
         outline: none;
         box-shadow: none;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+    .no-user-body{
+        text-align: center;
+    }
+    .mete-item{
+        width:100px;
+        text-align: center;
+        height: 100px;
+        line-height: 100px;
+        display: inline-block;
+        white-space: nowrap;
+        background-color: #FFF;
+        margin: 10px;
+        padding:10px;
+        border: 2px solid #FFF;
+        border-radius: 5px;
+        background-size: 30px 30px;
+        background-repeat:no-repeat;
+        background-position-x: center;
+        background-position-y: 30px;
+    }
+    .mete-item:hover{
+        border: 2px solid #0099CC;
+    }
+    .mete-item i{
+        height: 20px;
+        display: block;
+    }
+    .mete-item.handle {
+        background-image: url("../assets/img/handle.svg");
+    }
+    .mete-item.record {
+        background-image: url("../assets/img/record.svg");
+    }
+    .mete-item.entering {
+        background-image: url("../assets/img/entering.svg");
+    }
+    .mete-item.exit {
+        background-image: url("../assets/img/exit.svg");
     }
 </style>

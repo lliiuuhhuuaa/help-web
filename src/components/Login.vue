@@ -24,7 +24,6 @@
 <script>
     import Loading from "@/components/Loading";
     import "@/assets/css/loading.css";
-
     export default {
         name: 'App',
         components: {Loading},
@@ -69,7 +68,10 @@
                     localStorage.removeItem("login-save");
                 }
                 this.$ajax.post("/user/login", {username:this.username,password:this.$aes.encrypt(this.password)},{animation:this.constant.Animation.PART,alertError:true}).then(res => {
-                    console.log(res);
+                    res = res.data;
+                    localStorage.setItem("tk",res.token);
+                    this.constant.login = true;
+                    this.$router.push({path:'/'+res.role})
                 })
             }
         }

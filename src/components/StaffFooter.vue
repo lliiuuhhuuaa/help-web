@@ -15,11 +15,11 @@
 
 <script>
     export default {
-        name: 'MessageFooter',
+        name: 'StaffFooter',
         data() {
             return {
                 //输入内容
-                content: "",
+                content: "11",
                 //发送按钮是否可用
                 send: false,
                 //上次发送时间
@@ -31,8 +31,6 @@
             }
         },
         created() {
-            //检查排队
-            this.checkWaitList();
         },
         computed: {
             //等待数变更
@@ -76,31 +74,6 @@
                 this.prevSendTime = time;
                 //发送
                 this.$store.commit("updateState", {waitSend: {tag:item}});
-            },
-            //检查排队情况
-            checkWaitList:function () {
-                if(this.timeout){
-                    clearTimeout(this.timeout);
-                }
-                this.$ajax.post("/web/staff/online/getCurrWaitListIndex", {}).then(res => {
-                    this.constant.staffWaitCount = res.data;
-                    if(res.data>0){
-                        this.constant.staffState = true;
-                        this.timeout = setTimeout(()=>{
-                            this.checkWaitList();
-                        },5000)
-                    }
-                });
-            },
-            //退出排队
-            exitWaitList:function () {
-                this.$ajax.post("/web/staff/online/exitWaitList", {}).then(() => {
-                    this.$store.commit("updateState", {staffWaitCount:0});
-                    this.$store.commit("updateState", {staffState:false});
-                    if(this.timeout){
-                        clearTimeout(this.timeout);
-                    }
-                });
             }
         }
     }

@@ -16,12 +16,8 @@
         name: 'App',
         data() {
             return {
-
+                constant:this.$store.state,
             }
-        },
-        created() {
-            //登陆认证
-            this.loginConnect();
         },
         mounted() {
             this.Emit.$on("appToBottom", this.scrollToBottom)
@@ -32,15 +28,10 @@
             StaffBody,
             StaffFooter
         },
+        created() {
+            this.constant.login = localStorage.getItem("tk")!=null;
+        },
         methods: {
-            //登陆
-            loginConnect:function(){
-                this.$ajax.post("/open/user/connect", {cert: this.getUrlParam("cert")}).then(res => {
-                    this.$store.commit("updateState", {loading: false});
-                    localStorage.setItem("tk",res.data);
-                    this.$store.commit("updateState",{login:true});
-                })
-            },
             //弹出键盘时滚动到底部
             scrollToBottom: function () {
                 let el = document.getElementById("app");

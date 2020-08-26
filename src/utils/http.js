@@ -13,7 +13,10 @@ axios.defaults.timeout = 10000;
  * config.alertError=true/false
  * //出现错误时是否直接返回错误
  * config.returnError=true/false
- * config.contentType=请求方式,默认application/x-www-form-urlencoded
+ * //出现错误时是否忽略
+ * config.ignoreError=true/false
+ * //请求方式,默认application/x-www-form-urlencoded
+ * config.contentType=
  */
 axios.interceptors.request.use(config => {
     if(config.url.startsWith("http")){
@@ -67,6 +70,12 @@ axios.interceptors.response.use(response => {
     if(response.config.url.startsWith("http")){
         return response;
     }
+    if (response.data.code != store.state.ResultCode.OK) {
+        //忽略错误
+        if(response.config.ignoreError){
+            return new Promise(() => {});
+        }
+    }
     if (response.data.code === store.state.ResultCode.NO_AUTH) {
         localStorage.removeItem("loginUser");
         store.state.layer.alert("登陆失效", {icon: 0});
@@ -103,6 +112,10 @@ axios.interceptors.response.use(response => {
         store.commit("updateState", {loading: false});
     }else if(error.config.animation===store.state.Animation.PART){
         store.commit("updateState", {loadingNoBack: false});
+    }
+    //忽略错误
+    if(error.config.ignoreError){
+        return new Promise(() => {});
     }
     // 关闭loading
     //store.commit("updateState", {loading: false});

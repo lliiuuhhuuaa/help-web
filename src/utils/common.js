@@ -35,6 +35,25 @@ export function decrypt(word) {
     return CryptoJS.enc.Utf8.stringify(decrypt).toString();
 }
 
+/**
+ * web数据库
+ * @returns {Database}
+ */
+export function webSql() {
+    if(window.openDatabase){
+        let db = openDatabase("help_db",'1.0',"HelpDb",2*1024*1024);
+        //创建表
+        if(db){
+            db.transaction(function (tx) {
+                tx.executeSql("CREATE TABLE IF NOT EXISTS `help_msg` (`id`,`msg`,`user_id`,`create_date`,`direct`,`staff_user_id`,`state`)")
+            },function (e) {
+                console.log(e);
+            });
+            return db;
+        }
+    }
+    alert("浏览器不支持数据操作")
+}
 /***
  * 时间格式化
  * @param fmt

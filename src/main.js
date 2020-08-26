@@ -4,7 +4,7 @@ import {Emit} from './emit/emit.js'
 //合局状态管理
 import store from './utils/store';
 //通用js
-import {encrypt,decrypt} from './utils/common';
+import {encrypt,decrypt,webSql} from './utils/common';
 //ajax请求
 import axios from './utils/http'
 //路由
@@ -20,6 +20,8 @@ Vue.prototype.$ajax = axios;
 Vue.prototype.$aes = {encrypt,decrypt};
 Vue.prototype.$layer = layer(Vue);
 Vue.use(layer);
+Vue.use(webSql);
+
 //让http拦截可以使用弹窗
 store.commit("updateState", {"layer": Vue.prototype.$layer});
 new Vue({
