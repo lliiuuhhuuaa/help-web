@@ -146,8 +146,9 @@
             },
             //请求发送消息
             requestSend: function (obj, reply) {
-                this.$ajax.post("/web/help/tag", {tag: obj.tag}).then(res => {
+                this.$ajax.post("/web/help/tag", {tag: this.$aes.encrypt(obj.tag)}).then(res => {
                     res = res.data;
+                    res.reply = this.$aes.encrypt(res.reply);
                     if (res.state === this.constant.MsgState.DANGER) {
                         reply.tag = res.reply;
                         this.scrollBottom();

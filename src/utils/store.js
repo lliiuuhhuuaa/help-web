@@ -4,7 +4,7 @@ Vue.use(Vuex);
 const store = new Vuex.Store({
     state: {
         serviceUrl:"/help/api",
-        loading: true,
+        loading: false,
         loadingNoBack: false,
         login:false,
         commons:[],
@@ -33,6 +33,10 @@ const store = new Vuex.Store({
         StaffType:{
             WAIT:1, // 等待
             SEND:2 //已发送
+        },
+        Animation:{
+            ALL:1,
+            PART:2
         },
         //待发送消息
         waitSend:{},
