@@ -3,7 +3,8 @@
         <div class="staff-state">当前服务人数 <span>{{userList.length}}</span> 位 , 排队中人数 <span>{{waitCount}}</span> 位</div>
         <ul id="head-scroll" class="user-item-body">
             <li class="no-user" v-if="userList.length<1&&waitCount<0">当前没有用户需要帮助</li>
-            <li class="user-item" v-for="item in userList" v-bind:key="item.userId" @click="constant.activeUserId===item.userId?constant.activeUserId=0:constant.activeUserId=item.userId"  v-bind:class="{'active':constant.activeUserId===item.userId}">{{item.username}}</li>
+            <li class="user-item" v-for="item in userList" v-bind:key="item.userId" @click="constant.activeUserId===item.userId?constant.activeUserId=0:constant.activeUserId=item.userId"
+                v-bind:class="{'active':constant.activeUserId===item.userId}">{{item.nickname}}</li>
             <li class="user-item add-user" @click="getWaitUser" v-if="waitCount>0">✚</li>
         </ul>
     </div>
