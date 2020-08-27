@@ -19,7 +19,7 @@
         data() {
             return {
                 //输入内容
-                content: "11",
+                content: "",
                 //发送按钮是否可用
                 send: false,
                 //上次发送时间

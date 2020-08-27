@@ -7,6 +7,17 @@
 <script>
     export default {
         name: 'App',
+        computed: {
+            //登陆状态更新
+            login() {
+                return this.$store.state.login;
+            },
+        },
+        watch: {
+            login: function (val) {
+                this.$connect(val);
+            },
+        }
     }
 </script>
 
