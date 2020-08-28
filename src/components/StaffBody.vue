@@ -233,15 +233,25 @@
                         lastId = this.msgList[key].id;
                     }
                 }
-                this.$ajax.post("/web/staff/online/listHelpMsg", {
+                this.listHelpMsg(this.page+1,this.rows,lastId,null,callback);
+            },
+            //加载历史记录
+            listHelpMsg: function (page,rows,userId,lastId,callback) {
+                lastId = lastId|null;
+                page = page|1;
+                rows = this.rows;
+                this.$ajax.post("/staff/online/listHelpMsg", {
                     page: this.page + 1,
                     rows: this.rows,
-                    lastId: lastId
+                    lastId: lastId,
+                    userId:userId
                 }).then(res => {
                     let data = res.data.rows;
                     if (data == null || data.length < 1) {
                         this.listMore = false;
-                        callback("已经加载完了");
+                        if(callback){
+                            callback("已经加载完了");
+                        }
                         return;
                     }
                     this.page = res.data.page;
@@ -257,7 +267,9 @@
                         };
                         this.msgList.splice(0, 0, msgObj);
                     }
-                    callback("加载成功");
+                    if(callback) {
+                        callback("加载成功");
+                    }
                     this.scrollState = false;
                     setTimeout(() => {
                         this.scrollState = true;
@@ -300,6 +312,10 @@
             waitSend() {
                 return this.constant.waitSend;
             },
+            //激活用户变更
+            activeUser(){
+                return this.constant.activeUserId;
+            }
         },
         watch: {
             msgList: function () {
@@ -311,6 +327,12 @@
             waitSend: function (obj) {
                 this.selfSendMsg(obj);
             },
+            //激活用户变更
+            activeUser:function (id) {
+                if(id>0){
+                    this.listHelpMsg(1,this.rows,id);
+                }
+            }
         }
     }
 </script>

@@ -2,11 +2,13 @@
  * socket封装
  * @returns {{}}
  */
+let _this = null;
 export default function socket(vue,state) {
     if(!state){
         vue.$socket.disconnect();
         return;
     }
+    _this = vue;
     let sockets = vue.sockets;
     sockets.unsubscribe("connect");
     sockets.subscribe("connect", data => {
@@ -44,10 +46,14 @@ export default function socket(vue,state) {
     vue.$socket.io.opts.query = "tk=" + localStorage.getItem("tk");
     //连接
     vue.$socket.open();
-    setInterval(()=>{
-        let start = +new Date();
-        vue.$socket.emit("network_speed_test",null,()=>{
-            console.log(+new Date()-start);
-        })
-    },5000);
+    testSpeed();
+}
+function testSpeed() {
+    let start = +new Date();
+    _this.$socket.emit("network_speed_test",null,()=>{
+        console.log(+new Date()-start);
+        setTimeout(()=>{
+            testSpeed();
+        },5000);
+    })
 }

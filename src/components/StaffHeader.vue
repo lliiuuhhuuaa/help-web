@@ -22,42 +22,26 @@
         },
 
         created() {
+            this.sockets.subscribe("dataUpdate", data => {
+                for(let i=0;i<data.length;i++){
+                    let temp = data[i];
+                    if(temp.key.indexOf("constant.")>-1){
+                        temp.key = temp.key.replace("constant.","");
+                        this.constant[temp.key] = temp.obj;
+                        continue;
+                    }
+                    if(this[temp.key]!=undefined){
+                        this[temp.key] = temp.obj;
+                    }
+                }
+                console.log("接收到数据更新",data);
+            });
             //获取当前排队数
-            this.getUserListInfo();
+            this.getCurrWaitCount();
             //获取当前聊天用户
-            this.getUserChatListInfo();
+            this.getCurrChatUser();
         },
       methods:{
-          //获取用户排队信息
-          getUserListInfo:function(){
-              this.getCurrWaitCount();
-              if(timer){
-                  clearInterval(timer);
-              }
-              let timer = setInterval(()=>{
-                  if(!this.constant.login){
-                      clearInterval(timer);
-                      return;
-                  }
-                  this.getCurrWaitCount();
-              },6000);
-
-          },
-          //获取聊天用户信息
-          getUserChatListInfo:function(){
-              this.getCurrChatUser();
-              if(timer){
-                  clearInterval(timer);
-              }
-              let timer = setInterval(()=>{
-                  if(!this.constant.login){
-                      clearInterval(timer);
-                      return;
-                  }
-                  this.getCurrChatUser();
-              },5000);
-
-          },
           //获取当前排队数
           getCurrWaitCount:function(){
               this.$ajax.post("/staff/online/getCurrWaitCount", {}).then(res => {
@@ -73,7 +57,6 @@
           //获取等待用户
           getWaitUser:function(){
               this.$ajax.post("/staff/online/getWaitUser", {animation:this.constant.Animation.PART,alertError:true}).then(() => {
-                  this.getUserChatListInfo();
               })
           },
         //滚动到底部
