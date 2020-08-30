@@ -237,6 +237,8 @@
             },
             //加载历史记录
             listHelpMsg: function (page,rows,userId,lastId,callback) {
+                let result = this.getDbHelpMsg(page,rows,userId,lastId);
+                this.showMsgData(result);
                 lastId = lastId|null;
                 page = page|1;
                 rows = this.rows;
@@ -255,26 +257,38 @@
                         return;
                     }
                     this.page = res.data.page;
-                    let msgObj = null;
-                    let temp = null;
-                    for (let i = data.length - 1; i >= 0; i--) {
-                        temp = data[i];
-                        msgObj = {
-                            id: temp.id,
-                            class: temp.direct == 1 ? this.MsgClass.SELF : this.MsgClass.REPLY,
-                            tag: temp.msg+"<span style='font-size: 14px;float:right'>"+new Date(temp.createDate).format('yyyy-MM-dd HH:mm:ss')+"</span>",
-                            type:'html'
-                        };
-                        this.msgList.splice(0, 0, msgObj);
-                    }
+                    this.showMsgData(data);
                     if(callback) {
                         callback("加载成功");
                     }
+
+                });
+            },
+            //获取本地数据库消息
+            getDbHelpMsg(page,rows,userId){
+                this.$indexdb.putData(this.$db,"help_msg",{id:0,msg:"hello",userId:0},function (data) {
+                    console.log(data);
+                })
+                let list = this.$indexdb.getDataByIndex(this.$db,"help_msg","userId",userId)
+                console.log(list);
+            },
+            showMsgData(data){
+                let msgObj = null;
+                let temp = null;
+                for (let i = data.length - 1; i >= 0; i--) {
+                    temp = data[i];
+                    msgObj = {
+                        id: temp.id,
+                        class: temp.direct == 1 ? this.MsgClass.SELF : this.MsgClass.REPLY,
+                        tag: temp.msg+"<span style='font-size: 14px;float:right'>"+new Date(temp.createDate).format('yyyy-MM-dd HH:mm:ss')+"</span>",
+                        type:'html'
+                    };
+                    this.msgList.splice(0, 0, msgObj);
                     this.scrollState = false;
                     setTimeout(() => {
                         this.scrollState = true;
                     }, 1000);
-                });
+                }
             },
             onRefresh(done) {
                 if (this.listMore) {

@@ -2,7 +2,7 @@ import Vue from 'vue'
 import App from './App.vue'
 import {Emit} from './emit/emit.js'
 //通用js
-import {encrypt, decrypt, webSql} from './utils/common';
+import {encrypt, decrypt} from './utils/common';
 import axios from './utils/http';
 import store from './utils/store';
 //socket
@@ -14,6 +14,8 @@ import router from './router'
 //弹窗插件
 import layer from 'vue-layer'
 import 'vue-layer/lib/vue-layer.css';
+//数据库
+import indexdb from "./utils/indexdb";
 
 Vue.config.productionTip = false;
 Vue.prototype.Emit = Emit;
@@ -21,6 +23,11 @@ Vue.prototype.$store = store;
 Vue.prototype.$ajax = axios;
 Vue.prototype.$aes = {encrypt, decrypt};
 Vue.prototype.$layer = layer(Vue);
+Vue.prototype.$indexdb = indexdb;
+//开启并初始化数据库
+indexdb.openDB("help_db",'1.0',[{name:"help_msg",key:"id",indexs:[{key:"userId",unique:false}]}],function (db) {
+    Vue.prototype.$db = db;
+});
 Vue.use(new VueSocketIO({
     debug: false,
     connection: SocketIO("/", {autoConnect: false}),
@@ -30,7 +37,6 @@ Vue.prototype.$connect = function (state) {
     socket(this,state);
 };
 Vue.use(layer);
-Vue.use(webSql);
 //让http拦截可以使用弹窗
 store.commit("updateState", {"layer": Vue.prototype.$layer});
 new Vue({
