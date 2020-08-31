@@ -71,7 +71,28 @@
             }
           }, 10)
         }
-      }
+      },
+        computed: {
+            //局部变动监听
+            updatePart() {
+                return this.constant.updatePart;
+            },
+        },
+        watch: {
+            //局部变动
+            updatePart: function (obj) {
+                for (let objKey in obj) {
+                    if(objKey==='delUserList'){
+                        for(let i=0;i<this.userList.length;i++){
+                            if(this.userList[i].userId===obj[objKey]){
+                                this.userList.splice(i,1);
+                            }
+                        }
+                    }
+                    break;
+                }
+                }
+            },
     }
 </script>
 

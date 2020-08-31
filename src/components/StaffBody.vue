@@ -1,5 +1,5 @@
 <template>
-    <div class="body">
+    <div class="body" v-bind:class="{'show-tool':this.constant.showTool,'hide-footer':!this.constant.showFooter}">
         <div class="no-user-body" v-if="this.constant.activeUserId<1">
             <div class="mete-item handle"><i></i><b>处理离线问题</b></div>
             <div class="mete-item entering"><i></i><b>录入帮助词库</b></div>
@@ -232,6 +232,7 @@
                         tag: temp.msg + "<span style='font-size: 14px;position: absolute;top: -5px;" + (temp.direct !== 1 ? "right" : "left") + ": 20px;color: #999;'>" + new Date(temp.createDate).format('yyyy-MM-dd HH:mm:ss') + "</span>",
                         type: 'html'
                     };
+                    this.scrollBottom();
                     this.msgList.splice(0, 0, msgObj);
                     this.msgList.sort((a, b) => {
                         return a.id - b.id
@@ -255,6 +256,9 @@
             //滚动到底部
             scrollBottom: function () {
                 let el = document.getElementById("refresh-scroll");
+                if(!el){
+                    return;
+                }
                 if (this.scrollState) {
                     //可滚动
                     el.scrollTop = el.scrollHeight;
@@ -267,7 +271,7 @@
                     }, 10)
                 }else{
                     //非可滚动状态,保持当前位置
-                    let count = 10;
+                    let count = 100;
                     el.scrollTop = el.scrollHeight-this.lastScrollHeight;
                     let interval = setInterval(() => {
                         el.scrollTop = el.scrollHeight-this.lastScrollHeight;
@@ -298,6 +302,10 @@
             //激活用户变更
             activeUser() {
                 return this.constant.activeUserId;
+            },
+            //显示工具栏
+            showTool() {
+                return this.constant.showTool;
             }
         },
         watch: {
@@ -312,9 +320,15 @@
             activeUser: function (id) {
                 this.msgList = [];
                 this.listMore = true;
+                this.constant.showTool = false;
+                this.constant.showFooter = id > 0;
                 if (id > 0) {
                     this.listHelpMsg(1, id);
                 }
+            },
+            //显示工具栏
+            showTool:function () {
+                this.scrollBottom();
             }
         }
     }
@@ -325,20 +339,18 @@
     .body {
         background: rgba(65, 152, 199, 0.1);
         width: 100%;
-        height: calc(100vh - 180px);
+        height: calc(100vh - 134px);
         overflow: hidden;
         scrollbar-width: none; /* firefox */
         -ms-overflow-style: none; /* IE 10+ */
+        padding: 2px 0;
     }
-
-    .body.hide-header.staff-wait-state {
-        height: calc(100vh - 130px);
+    .body.show-tool{
+        height: calc(100vh - 194px);
     }
-
-    .body.staff-wait-state {
-        height: calc(100vh - 180px);
+    .body.hide-footer{
+        height: calc(100vh - 84px);
     }
-
     .body::-webkit-scrollbar {
         display: none; /* Chrome Safari */
     }

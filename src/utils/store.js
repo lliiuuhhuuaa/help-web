@@ -48,6 +48,12 @@ const store = new Vuex.Store({
         activeUserId:-1,
         //当前用户信息
         userInfo:null,
+        //显示工具栏
+        showTool:false,
+        //更新局部
+        updatePart:null,
+        //显示foot
+        showFooter:false,
 
     },
     mutations: {

@@ -1,17 +1,13 @@
 <template>
-    <div class="footer" v-bind:class="{'focusState':keyboard,'staff-wait-body':this.constant.staffWaitCount>0}">
-        <div class="staff-wait" v-if="this.constant.staffWaitCount>0"><span>人工客服排队:您当前在第 <span>{{this.constant.staffWaitCount}}</span> 位<button class="exit-list" @click="exitWaitList">退出排队</button></span></div>
-        <ul class="common-word">
-            <li v-for="item in this.$store.state.commons" :key="item" @click="sendQuickMsg(item)">
-                {{item}}
-            </li>
-        </ul>
+    <div class="footer" v-if="this.constant.showFooter" v-bind:class="{'show-tool':this.constant.showTool}">
         <div class="input-body">
             <input autocomplete="off" class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg" placeholder="可以点这里输入问题"/>
-            <button class="send-button" v-bind:class="{'active':send}" v-on:click="send?sendMsg:toggleTool"/>
+            <button class="send-button" v-bind:class="{'active':send}" v-on:click="send?sendMsg():toggleTool()"/>
         </div>
-        <div v-if="showTool">
-            aaa
+        <div class="tool-bar" v-if="this.constant.showTool">
+            <div class="tool-item stop" @click="stopChat">终止会话</div>
+            <div class="tool-item img">发送图片</div>
+            <div class="tool-item file">发送文件</div>
         </div>
     </div>
 </template>
@@ -31,34 +27,23 @@
                 keyboard:false,
                 constant: this.$store.state,
                 timeOut:null,
-                //显示工具
-                showTool:false
             }
         },
         created() {
         },
         computed: {
-            //等待数变更
-            waitUpdate() {
-                return this.constant.staffWaitCount;
-            },
+
         },
         watch: {
             //输入框内容变更
             content: function (val) {
                 this.send = val.trim() !== '';
             },
-            waitUpdate: function (val,old) {
-                if(old<1&&val>0){
-                    this.checkWaitList();
-                }
-            }
         },
         methods: {
             //显示工具栏
             toggleTool:function(){
-              this.showTool = !this.showTool;
-              console.log(this.showTool)
+              this.constant.showTool = !this.constant.showTool;
             },
             //发送消息
             sendMsg: function () {
@@ -84,6 +69,22 @@
                 this.prevSendTime = time;
                 //发送
                 this.$store.commit("updateState", {waitSend: {tag:item}});
+            },
+            //中止聊天
+            stopChat:function () {
+                let userId = this.constant.activeUserId;
+                if(userId<1){
+                    return;
+                }
+                let _this = this;
+                _this.$layer.confirm('是否确认中止会话?', {icon: 3, title:'中止会话'}, function(index){
+                    _this.$ajax.post("/staff/online/stopChat", {userId:userId},{animation:_this.constant.Animation.PART,alertError:true}).then(() => {
+                        _this.constant.activeUserId = -1;
+                        _this.constant.updatePart = {"delUserList":userId};
+                    });
+                    _this.$layer.close(index);
+                });
+
             }
         }
     }
@@ -96,14 +97,11 @@
         bottom: 0;
         left: 0;
         right: 0;
-        height: 100px;
+        height: 50px;
         background: rgba(65, 152, 199, 0.1);
     }
-    .footer.staff-wait-body{
-        height: 130px;
-    }
-    .focusState{
-        margin-bottom: 70px;
+    .footer.show-tool{
+        height: 110px;
     }
     .common-word {
         text-align: left;
@@ -178,5 +176,38 @@
         box-shadow: none;
         font-weight: bold;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+    .tool-bar{
+        height: 60px;
+        width: 100%;
+        background: rgba(65, 152, 199, 0.2);
+        text-align: center;
+    }
+    .tool-bar .tool-item{
+        width: 60px;
+        height: 40px;
+        background-color: #FFF;
+        color: #0099CC;
+        margin: 5px;
+        font-size: 14px;
+        line-height: 65px;
+        border-radius: 10px;
+        padding: 5px;
+        display: inline-block;
+        white-space: nowrap;
+        background-size: 20px 20px;
+        background-repeat: no-repeat;
+        background-position-x: center;
+        background-position-y: 5px;
+        cursor: pointer;
+    }
+    .tool-item.stop {
+        background-image: url("../assets/img/stop.svg");
+    }
+    .tool-item.img {
+        background-image: url("../assets/img/img.svg");
+    }
+    .tool-item.file {
+        background-image: url("../assets/img/file.svg");
     }
 </style>
