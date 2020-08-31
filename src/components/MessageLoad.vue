@@ -55,8 +55,10 @@
                 if (!this.enableRefresh || this.$el.scrollTop > 0 || !this.touching) {
                     return
                 }
-                let diff = e.targetTouches[0].pageY - this.startY - this.startScroll
-                if (diff > 0) e.preventDefault();
+                let diff = e.targetTouches[0].pageY - this.startY - this.startScroll;
+                if (diff > 0){
+                    e.preventDefault();
+                }
                 this.top = Math.pow(diff, 0.8) + (this.state === 2 ? this.offset : 0);
 
                 if (this.state === 2) { // in refreshing

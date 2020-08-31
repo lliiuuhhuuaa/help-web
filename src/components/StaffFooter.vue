@@ -8,7 +8,10 @@
         </ul>
         <div class="input-body">
             <input autocomplete="off" class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg" placeholder="可以点这里输入问题"/>
-            <button class="send-button" v-bind:class="{'active':send}" v-on:click="sendMsg"/>
+            <button class="send-button" v-bind:class="{'active':send}" v-on:click="send?sendMsg:toggleTool"/>
+        </div>
+        <div v-if="showTool">
+            aaa
         </div>
     </div>
 </template>
@@ -27,7 +30,9 @@
                 //是否正在使用键盘
                 keyboard:false,
                 constant: this.$store.state,
-                timeOut:null
+                timeOut:null,
+                //显示工具
+                showTool:false
             }
         },
         created() {
@@ -50,6 +55,11 @@
             }
         },
         methods: {
+            //显示工具栏
+            toggleTool:function(){
+              this.showTool = !this.showTool;
+              console.log(this.showTool)
+            },
             //发送消息
             sendMsg: function () {
                 if (!this.send) {
@@ -125,7 +135,7 @@
 
     .input-body {
         height: 30px;
-        padding: 10px 20px;
+        padding: 10px 0 10px 20px;
         background: #FFF;
     }
 
@@ -134,7 +144,7 @@
         width: 50px;
         height: 30px;
         border: none;
-        background: url("../assets/img/send_grey.svg") no-repeat center;
+        background: url("../assets/img/plus.svg") no-repeat center;
         background-size: 100% 100%;
         outline: none;
     }

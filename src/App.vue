@@ -16,7 +16,17 @@
         watch: {
             login: function (val) {
                 this.$connect(val);
+                if(val){
+                    this.getUserInfo();
+                }
             },
+        },
+        methods:{
+            getUserInfo:function () {
+                this.$ajax.post("/user/getUserInfo", {animation:this.$store.state.Animation.PART,alertError:true}).then((res) => {
+                    this.$store.state.userInfo = res.data;
+                })
+            }
         }
     }
 </script>

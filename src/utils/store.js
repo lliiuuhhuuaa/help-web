@@ -46,6 +46,8 @@ const store = new Vuex.Store({
         staffState:false,
         //激活用户ID
         activeUserId:-1,
+        //当前用户信息
+        userInfo:null,
 
     },
     mutations: {

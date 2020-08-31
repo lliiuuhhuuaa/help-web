@@ -71,7 +71,6 @@
                 page: 0,
                 rows: 20,
                 constant: this.$store.state,
-                staffState: false,
                 listMore: true,
             }
         },
@@ -80,8 +79,22 @@
             window.SD = function (tag) {
                 _this.selfSendMsg({'tag': tag})
             }
+            //获取当前人工客服状态
+            this.getCurrStaffState();
+            //监听消息
+            this.sockets.subscribe("chatMsg", data => {
+                //缓存数据
+                this.$indexdb.putData(this.$db, "help_msg", data);
+                this.showMsgData(data,true);
+            });
         },
         methods: {
+            //获取当前人工客服状态
+            getCurrStaffState: function () {
+                this.$ajax.post("/web/staff/online/getCurrStaffState", {}).then(res => {
+                    this.constant.staffState = res.data;
+                })
+            },
             initData: function () {
                 this.$ajax.post("/web/merchant/getHelpIndividuality", {}).then(res => {
                     res = res.data;
@@ -93,7 +106,7 @@
                                 img: res.advertising,
                                 content: res.helpTags
                             },
-                            id: +new Date()
+                            id: -new Date()
                         };
                         this.advertising = reply.data.content;
 
@@ -106,7 +119,7 @@
                     let reply = {
                         class: this.MsgClass.REPLY,
                         tag: res.greeting,
-                        id: res.createDate
+                        id: -res.createDate
                     };
                     this.msgList.push(reply);
                     //检查是否处理等待人工
@@ -119,6 +132,48 @@
                         this.scrollBottom();
                     }
                 });
+            },
+            showMsgData(data,after) {
+                if (!data) {
+                    return;
+                }
+                if (!(data instanceof Array)) {
+                    data = [data];
+                }
+                let msgObj = null;
+                let temp = null;
+                for (let i = data.length - 1; i >= 0; i--) {
+                    temp = data[i];
+                    //检查是否有重复消息
+                    let pass = true;
+                    for (let key in this.msgList) {
+                        if (this.msgList[key].id === temp.id) {
+                            pass = false;
+                            break;
+                        }
+                    }
+                    if (!pass) {
+                        continue;
+                    }
+                    msgObj = {
+                        id: temp.id,
+                        class: temp.direct === 1 ? this.MsgClass.SELF : this.MsgClass.REPLY,
+                        tag: temp.msg + "<span style='font-size: 14px;position: absolute;top: -5px;" + (temp.direct === 1 ? "right" : "left") + ": 20px;color: #999;'>" + new Date(temp.createDate).format('yyyy-MM-dd HH:mm:ss') + "</span>",
+                        type: 'html'
+                    };
+                    if(after){
+                        this.msgList.push(msgObj);
+                    }else{
+                        this.msgList.splice(0, 0, msgObj);
+                    }
+                    this.msgList.sort((a, b) => {
+                        if(this.scrollState||a.id<1||b.id<1){
+                            return 0;
+                        }
+                        return a.id - b.id
+                    });
+                    this.scrollBottom();
+                }
             },
             //点击推荐
             clickRecommend: function (item) {
@@ -148,7 +203,7 @@
             requestSend: function (obj, reply) {
                 this.$ajax.post("/web/help/tag", {tag: this.$aes.encrypt(obj.tag)}).then(res => {
                     res = res.data;
-                    if(res.reply){
+                    if (res.reply) {
                         res.reply = this.$aes.decrypt(res.reply);
                     }
                     if (res.state === this.constant.MsgState.DANGER) {
@@ -156,33 +211,10 @@
                         this.scrollBottom();
                         return;
                     }
-                    if (res.state === this.constant.MsgState.WAIT) {
-                        reply.tag = "小六子解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
-                        this.scrollBottom();
-                        return;
-                    }
-                    if (res.state === this.constant.MsgState.OK) {
-                        this.showMsgHandle(reply, res);
-                        this.scrollBottom();
-                        return;
-                    }
                     if (res.state === this.constant.MsgState.STAFF) {
                         this.showStaffHandle(reply, res, obj);
                         this.scrollBottom();
                         return;
-                    }
-                    if (res.state === this.constant.MsgState.RECOMMEND) {
-                        reply.tag = "我猜您是要问这些吗?";
-                        let recommend = {
-                            class: this.MsgClass.RECOMMEND,
-                            data: {
-                                title: "为您找到相关问题",
-                                content: res.result
-                            },
-                            id: +new Date()
-                        };
-                        this.msgList.push(recommend);
-                        this.scrollBottom();
                     }
                 }).catch(e => {
                     if (reply != null) {
@@ -194,51 +226,6 @@
                     obj.tag = "<s>" + obj.tag + "</s><span style='color:#D00;font-size: 14px'>(" + e.message + ")</span>";
                     obj.type = 'html';
                 });
-            },
-            showMsgHandle: function (reply, res) {
-                if (res.storageType === this.constant.StorageType.DB || res.storageType === this.constant.StorageType.PC) {
-                    reply.tag = res.reply;
-                    return;
-                }
-                if (res.storageType === this.constant.StorageType.HTML) {
-                    reply.tag = res.reply;
-                    reply['type'] = 'html';
-                    return;
-                }
-                if (res.storageType === this.constant.StorageType.FILE) {
-                    this.$ajax.get("/other/file/getGeneralFile/" + res.reply, {}).then(res => {
-                        reply['type'] = 'html';
-                        reply.tag = res;
-                    });
-                    return;
-                }
-                if (res.storageType === this.constant.StorageType.URL) {
-                    reply.tag = "正在为您访问:" + res.reply;
-                    let urlData = {
-                        class: this.MsgClass.REPLY,
-                        tag: '<iframe src="' + res.reply + '" width="100%" height="400px" frameborder="no" border="0" marginwidth="0" marginheight="0" scrolling="auto" allowtransparency="yes">',
-                        type: 'html',
-                        id: +new Date()
-                    };
-                    this.msgList.push(urlData);
-                    return;
-                }
-                if (res.storageType === this.constant.StorageType.PC2) {
-                    let arr = res.reply.split("|");
-                    reply.type = 'ask_answer';
-                    reply.tag = arr;
-                    return;
-                }
-                if (res.storageType === this.constant.StorageType.RECOMMEND) {
-                    reply.tag = "来看看这些";
-                    let recommend = {
-                        class: this.MsgClass.RECOMMEND,
-                        data: JSON.parse(res.reply),
-                        id: +new Date()
-                    };
-                    this.msgList.push(recommend);
-                    return;
-                }
             },
             showStaffHandle: function (reply, res, obj) {
                 if (res.storageType === this.constant.StaffType.WAIT) {
@@ -268,41 +255,64 @@
                         lastId = this.msgList[key].id;
                     }
                 }
+                this.listHelpMsg(this.page + 1, lastId, callback);
+            },
+            //加载历史记录
+            listHelpMsg: function (page, lastId, callback) {
+                lastId = lastId && lastId>0? lastId : null;
+                page = page ? page : 1;
+                this.getDbHelpMsg(page, lastId);
                 this.$ajax.post("/web/staff/online/listHelpMsg", {
-                    page: this.page + 1,
+                    page: page,
                     rows: this.rows,
                     lastId: lastId
                 }).then(res => {
                     let data = res.data.rows;
                     if (data == null || data.length < 1) {
                         this.listMore = false;
-                        callback("已经加载完了");
+                        if (callback) {
+                            callback("已经加载完了");
+                        }
                         return;
                     }
                     this.page = res.data.page;
-                    let msgObj = null;
-                    let temp = null;
-                    for (let i = data.length - 1; i >= 0; i--) {
-                        temp = data[i];
-                        msgObj = {
-                            id: temp.id,
-                            class: temp.direct == 1 ? this.MsgClass.SELF : this.MsgClass.REPLY,
-                            tag: temp.msg+"<span style='font-size: 14px;float:right'>"+new Date(temp.createDate).format('yyyy-MM-dd HH:mm:ss')+"</span>",
-                            type:'html'
-                        };
-                        this.msgList.splice(0, 0, msgObj);
+                    //缓存数据
+                    this.$indexdb.putData(this.$db, "help_msg", data);
+                    if(page>1){
+                        this.scrollState = false;
+                        setTimeout(() => {
+                            this.scrollState = true;
+                        }, 2000);
                     }
-                    callback("加载成功");
-                    this.scrollState = false;
-                    setTimeout(() => {
-                        this.scrollState = true;
-                    }, 1000);
+                    this.showMsgData(data);
+                    if (callback) {
+                        callback("加载成功");
+                    }
                 });
+            },
+            //获取本地数据库消息
+            getDbHelpMsg(page) {
+                let userId = this.constant.userInfo.userId;
+                this.$indexdb.getDataByIndex(this.$db, "help_msg", "userId", userId).then(data => {
+                    //data排序
+                    if(page>1){
+                        this.scrollState = false;
+                        setTimeout(() => {
+                            this.scrollState = true;
+                        }, 1000);
+                    }
+                    data.sort((a,b)=>{return b.id-a.id});
+                    let start = (page-1)*this.rows;
+                    let end = page*this.rows;
+                    this.showMsgData(data.slice(start,end));
+                })
             },
             onRefresh(done) {
                 if (this.listMore) {
+                    //记录当前滚动条位置
+                    this.lastScrollHeight = document.getElementById("refresh-scroll").scrollHeight;
                     this.getList(done);
-                }else{
+                } else {
                     done("真的没有了");
                 }
             },
@@ -312,15 +322,30 @@
             //滚动到底部
             scrollBottom: function () {
                 let el = document.getElementById("refresh-scroll");
-                el.scrollTop = el.scrollHeight;
-                let count = 10;
-                let interval = setInterval(() => {
+                if (this.scrollState) {
+                    //可滚动
                     el.scrollTop = el.scrollHeight;
-                    if (--count < 0) {
-                        clearInterval(interval);
-                    }
-                }, 10)
-            }
+                    let count = 5;
+                    let interval = setInterval(() => {
+                        el.scrollTop = el.scrollHeight;
+                        if (--count < 0) {
+                            clearInterval(interval);
+                        }
+                    }, 10)
+                }else{
+                    //非可滚动状态,保持当前位置
+                    let count = 10;
+                    el.scrollTop = el.scrollHeight-this.lastScrollHeight;
+                    let interval = setInterval(() => {
+                        el.scrollTop = el.scrollHeight-this.lastScrollHeight;
+                        if (--count < 0) {
+                            clearInterval(interval);
+                        }
+                    }, 5)
+
+                }
+
+            },
         },
         computed: {
             //登陆状态更新
@@ -381,6 +406,7 @@
         padding: 10px;
         word-break: break-all;
         word-wrap: break-word;
+        position: relative;
     }
 
     .msg-item > div {
