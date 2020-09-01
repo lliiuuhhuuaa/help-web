@@ -40,4 +40,10 @@
         color: #2c3e50;
         overflow-y: auto;
     }
+    .text-center{
+        text-align: center;
+    }
+    .point{
+        cursor: pointer;
+    }
 </style>

@@ -8,6 +8,29 @@
                         <div class="recommend-item">{{idx+1}}.{{it}}</div>
                     </div>
                 </div>
+                <div v-if="item.class==MsgClass.EVALUATE">
+                    <div class="star-body">
+                        <ul @mousemove="starMouseOver" @click="selectStar=!selectStar">
+                            <li class="star-item" v-bind:class="{'half':star>0,'full':star>1}" v-bind:value="1"></li>
+                            <li class="star-item" v-bind:class="{'half':star>2,'full':star>3}" v-bind:value="2"></li>
+                            <li class="star-item" v-bind:class="{'half':star>4,'full':star>5}" v-bind:value="3"></li>
+                            <li class="star-item" v-bind:class="{'half':star>6,'full':star>7}" v-bind:value="4"></li>
+                            <li class="star-item" v-bind:class="{'half':star>8,'full':star>9}" v-bind:value="5"></li>
+                        </ul>
+                        <div class="star-state" v-if="star>-1"><span
+                                v-text="star<1?'极差':star<2?'差':star<4?'不满意':star<6?'一般吧':star<8?'挺好的':star<10?'很好':'极好'"></span>
+                            <span class="star-num">{{star}}</span>分
+                        </div>
+                    </div>
+
+                    <div class="text-body" v-if="evaluate>0">
+                        <textarea class="text-input" v-model="evaluateText" placeholder="这里输入服务评价内容"
+                                  maxlength="100"></textarea>
+                        <button class="star-submit-btn" @click="starSubmit">提交</button>
+                    </div>
+                    <div class="text-center" v-else>已经评价完成</div>
+
+                </div>
                 <div v-else-if="item.class==MsgClass.ADVERTISING">
                     <div class="advertising-img" v-if="item.data.img"><img v-bind:src="item.data.img"></div>
                     <div class="advertising-body">
@@ -63,7 +86,8 @@
                     "SELF": "self-msg",
                     "REPLY": "reply-msg",
                     "RECOMMEND": "recommend-msg",
-                    "ADVERTISING": "advertising-msg"
+                    "ADVERTISING": "advertising-msg",
+                    "EVALUATE": "evaluate-msg"
                 },
                 msgList: [],
                 scrollState: true, // 是否可以滑动
@@ -73,26 +97,38 @@
                 constant: this.$store.state,
                 listMore: true,
                 //客服信息
-                staffInfo:null,
+                staffInfo: null,
+                //评价
+                evaluate: -1,
+                //当前星级
+                star: -1,
+                //评价内容
+                evaluateText: "",
+                //可选星
+                selectStar:true,
             }
         },
         created() {
             let _this = this;
             window.SD = function (tag) {
                 _this.selfSendMsg({'tag': tag})
-            }
-            //获取当前人工客服状态
-            this.getCurrStaffState();
-            //监听消息
-            this.sockets.subscribe("chatMsg", data => {
-                //缓存数据
-                this.$indexdb.putData(this.$db, "help_msg", data);
-                this.showMsgData(data,true);
-            });
-            //监听消息
-            this.$store.commit("listenUpdateData", this);
+            };
         },
         methods: {
+            //登陆后初始化
+            loginAfter: function () {
+                //获取当前人工客服状态
+                this.getCurrStaffState();
+                //监听消息
+                this.sockets.subscribe("chatMsg", data => {
+                    //缓存数据
+                    this.$indexdb.putData(this.$db, "help_msg", data);
+                    this.showMsgData(data, true);
+                });
+                //监听消息
+                this.$store.commit("listenUpdateData", this);
+            },
+
             //获取当前人工客服状态
             getCurrStaffState: function () {
                 this.$ajax.post("/web/staff/online/getCurrStaffState", {}).then(res => {
@@ -137,7 +173,7 @@
                     }
                 });
             },
-            showMsgData(data,after) {
+            showMsgData(data, after) {
                 if (!data) {
                     return;
                 }
@@ -165,13 +201,13 @@
                         tag: temp.msg + "<span style='font-size: 14px;position: absolute;top: -5px;" + (temp.direct === 1 ? "right" : "left") + ": 20px;color: #999;'>" + new Date(temp.createDate).format('yyyy-MM-dd HH:mm:ss') + "</span>",
                         type: 'html'
                     };
-                    if(after){
+                    if (after) {
                         this.msgList.push(msgObj);
-                    }else{
+                    } else {
                         this.msgList.splice(0, 0, msgObj);
                     }
                     this.msgList.sort((a, b) => {
-                        if(this.scrollState||a.id<1||b.id<1){
+                        if (this.scrollState || a.id < 1 || b.id < 1) {
                             return 0;
                         }
                         return a.id - b.id
@@ -331,7 +367,7 @@
             },
             //加载历史记录
             listHelpMsg: function (page, lastId, callback) {
-                lastId = lastId && lastId>0? lastId : null;
+                lastId = lastId && lastId > 0 ? lastId : null;
                 page = page ? page : 1;
                 this.getDbHelpMsg(page, lastId);
                 this.$ajax.post("/web/staff/online/listHelpMsg", {
@@ -350,7 +386,7 @@
                     this.page = res.data.page;
                     //缓存数据
                     this.$indexdb.putData(this.$db, "help_msg", data);
-                    if(page>1){
+                    if (page > 1) {
                         this.scrollState = false;
                         setTimeout(() => {
                             this.scrollState = true;
@@ -367,16 +403,18 @@
                 let userId = this.constant.userInfo.userId;
                 this.$indexdb.getDataByIndex(this.$db, "help_msg", "userId", userId).then(data => {
                     //data排序
-                    if(page>1){
+                    if (page > 1) {
                         this.scrollState = false;
                         setTimeout(() => {
                             this.scrollState = true;
                         }, 1000);
                     }
-                    data.sort((a,b)=>{return b.id-a.id});
-                    let start = (page-1)*this.rows;
-                    let end = page*this.rows;
-                    this.showMsgData(data.slice(start,end));
+                    data.sort((a, b) => {
+                        return b.id - a.id
+                    });
+                    let start = (page - 1) * this.rows;
+                    let end = page * this.rows;
+                    this.showMsgData(data.slice(start, end));
                 })
             },
             onRefresh(done) {
@@ -394,6 +432,9 @@
             //滚动到底部
             scrollBottom: function () {
                 let el = document.getElementById("refresh-scroll");
+                if (!el) {
+                    return;
+                }
                 if (this.scrollState) {
                     //可滚动
                     el.scrollTop = el.scrollHeight;
@@ -404,20 +445,44 @@
                             clearInterval(interval);
                         }
                     }, 10)
-                }else{
+                } else {
                     //非可滚动状态,保持当前位置
                     let count = 10;
-                    el.scrollTop = el.scrollHeight-this.lastScrollHeight;
+                    el.scrollTop = el.scrollHeight - this.lastScrollHeight;
                     let interval = setInterval(() => {
-                        el.scrollTop = el.scrollHeight-this.lastScrollHeight;
+                        el.scrollTop = el.scrollHeight - this.lastScrollHeight;
                         if (--count < 0) {
                             clearInterval(interval);
                         }
                     }, 5)
 
                 }
-
             },
+            //评星鼠标经过
+            starMouseOver: function (e) {
+                if (this.evaluate < 0||!this.selectStar) {
+                    return;
+                }
+                let curr = Math.round((e.layerX - 5) / 17);
+                this.star = curr > 10 ? 10 : curr < 1 ? 0 : curr;
+            },
+            //评价提交
+            starSubmit: function () {
+                if (this.evaluate < 0) {
+                    return;
+                }
+                if (this.star < 0 || this.evaluateText === '') {
+                    return;
+                }
+                this.$ajax.post("/web/staff/online/evaluateStaff", {
+                    star: this.star,
+                    evaluateText: this.evaluateText,
+                    id: this.evaluate
+                }, {animation: this.$store.state.Animation.PART, alertError: true}).then(() => {
+                    this.evaluate = -1;
+                    this.evaluateText="";
+                });
+            }
         },
         computed: {
             //登陆状态更新
@@ -434,6 +499,7 @@
                 if (val) {
                     //登陆成功初始化数据
                     this.initData();
+                    this.loginAfter();
                 }
             },
             msgList: function () {
@@ -446,16 +512,22 @@
                 this.selfSendMsg(obj);
             },
             //客服信息变更
-            staffInfo:function (obj) {
-                console.log(obj);
-                let reply = {id:-new Date(),class:this.MsgClass.REPLY};
-                if(obj){
-                    reply['tag']='您好,客服【'+(obj.nickname?obj.nickname:obj.username)+'】为您竭诚服务';
-                }else{
-                    reply['tag']='感谢使用,服务已完成,请对本次服务进行评分';
+            staffInfo: function (obj) {
+                let reply = {id: -new Date(), class: this.MsgClass.REPLY};
+                if (obj) {
+                    reply['tag'] = '您好,客服【' + (obj.nickname ? obj.nickname : obj.username) + '】为您竭诚服务';
+                } else {
+                    reply['tag'] = '感谢使用,服务已完成,请对本次服务进行评分';
                 }
                 this.msgList.push(reply);
                 this.scrollBottom();
+            },
+            evaluate: function (obj) {
+                if (obj > 0) {
+                    let reply = {id: -(new Date()+2), class: this.MsgClass.EVALUATE, tag: obj};
+                    this.msgList.push(reply);
+                    this.scrollBottom();
+                }
             }
         }
     }
@@ -490,7 +562,6 @@
         padding: 10px;
         word-break: break-all;
         word-wrap: break-word;
-        position: relative;
     }
 
     .msg-item > div {
@@ -515,12 +586,12 @@
         border-radius: 18px 18px 0 18px;
     }
 
-    .msg-item.reply-msg {
+    .msg-item.reply-msg, .msg-item.evaluate-msg {
         text-align: left;
         margin-right: 50px;
     }
 
-    .reply-msg > div {
+    .reply-msg > div, .evaluate-msg > div {
         word-break: break-all;
         word-wrap: break-word;
         border-radius: 18px 18px 18px 0;
@@ -634,5 +705,90 @@
         outline: none;
         box-shadow: none;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+
+    .star-body {
+        height: 35px;
+        position: relative;
+        padding: 5px 10px;
+    }
+
+    .star-body ul {
+        height: 35px;
+        padding: 0 0 0 5px;
+        margin: 0;
+        text-align: center;
+        display: inline-block;
+    }
+
+    .star-body .star-state {
+        position: absolute;
+        right: 5px;
+        height: 35px;
+        line-height: 35px;
+        text-align: center;
+        display: inline-block;
+    }
+
+    .star-state .star-num {
+        font-size: 20px;
+        font-weight: bold;
+        color: #4198C8;
+    }
+
+    .star-body .star-item {
+        width: 30px;
+        text-align: center;
+        height: 35px;
+        line-height: 35px;
+        display: inline-block;
+        white-space: nowrap;
+        padding: 2px;
+        border-radius: 5px;
+        background-size: 30px 30px;
+        background-repeat: no-repeat;
+        background-position-x: center;
+        background-image: url("../assets/img/star1.svg");
+    }
+
+    .star-body .star-item.half {
+        background-image: url("../assets/img/star2.svg");
+    }
+
+    .star-body .star-item.full {
+        background-image: url("../assets/img/star3.svg");
+    }
+
+    .text-body {
+        width: 100%;
+        height: 110px;
+        text-align: center;
+    }
+
+    .text-body .text-input {
+        padding: 5px;
+        width: calc(100% - 10px);
+        height: 60px;
+        border-radius: 5px;
+        border: 2px solid #5CC9F5;
+        resize: none;
+        outline: none;
+        font-size: 16px;
+    }
+
+    .star-submit-btn {
+        padding: 5px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background: rgba(120, 200, 240, 0.9);
+        color: #FFF;
+        font-size: 18px;
+        outline-offset: -2px;
+        outline-color: rgba(120, 200, 240, 0.9);
+        box-shadow: none;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        width: 100px;
+        display: inline-block;
     }
 </style>

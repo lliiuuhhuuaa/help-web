@@ -72,11 +72,11 @@ const store = new Vuex.Store({
                     let temp = data[i];
                     if(temp.key.indexOf("constant.")>-1){
                         temp.key = temp.key.replace("constant.","");
-                        _this.constant[temp.key] = temp.obj;
+                        _this.constant[temp.key] = temp.obj?temp.obj:null;
                         continue;
                     }
                     if(_this[temp.key]!==undefined){
-                        _this[temp.key] = temp.obj;
+                        _this[temp.key] = temp.obj?temp.obj:null;
                     }
                 }
                 console.log("接收到数据更新1",data);
