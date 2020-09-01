@@ -64,6 +64,23 @@ const store = new Vuex.Store({
         },
         alertSuccess(msg){
             console.log(msg)
+        },
+        //监听数据更新
+        listenUpdateData:function (obj,_this) {
+            _this.sockets.subscribe("dataUpdate", data => {
+                for(let i=0;i<data.length;i++){
+                    let temp = data[i];
+                    if(temp.key.indexOf("constant.")>-1){
+                        temp.key = temp.key.replace("constant.","");
+                        _this.constant[temp.key] = temp.obj;
+                        continue;
+                    }
+                    if(_this[temp.key]!==undefined){
+                        _this[temp.key] = temp.obj;
+                    }
+                }
+                console.log("接收到数据更新1",data);
+            });
         }
     }
 });

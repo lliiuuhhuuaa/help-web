@@ -72,6 +72,8 @@
                 rows: 20,
                 constant: this.$store.state,
                 listMore: true,
+                //客服信息
+                staffInfo:null,
             }
         },
         created() {
@@ -87,6 +89,8 @@
                 this.$indexdb.putData(this.$db, "help_msg", data);
                 this.showMsgData(data,true);
             });
+            //监听消息
+            this.$store.commit("listenUpdateData", this);
         },
         methods: {
             //获取当前人工客服状态
@@ -211,10 +215,33 @@
                         this.scrollBottom();
                         return;
                     }
+                    if (res.state === this.constant.MsgState.WAIT) {
+                        reply.tag = "小六子解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
+                        this.scrollBottom();
+                        return;
+                    }
+                    if (res.state === this.constant.MsgState.OK) {
+                        this.showMsgHandle(reply, res);
+                        this.scrollBottom();
+                        return;
+                    }
                     if (res.state === this.constant.MsgState.STAFF) {
                         this.showStaffHandle(reply, res, obj);
                         this.scrollBottom();
                         return;
+                    }
+                    if (res.state === this.constant.MsgState.RECOMMEND) {
+                        reply.tag = "我猜您是要问这些吗?";
+                        let recommend = {
+                            class: this.MsgClass.RECOMMEND,
+                            data: {
+                                title: "为您找到相关问题",
+                                content: res.result
+                            },
+                            id: +new Date()
+                        };
+                        this.msgList.push(recommend);
+                        this.scrollBottom();
                     }
                 }).catch(e => {
                     if (reply != null) {
@@ -226,6 +253,51 @@
                     obj.tag = "<s>" + obj.tag + "</s><span style='color:#D00;font-size: 14px'>(" + e.message + ")</span>";
                     obj.type = 'html';
                 });
+            },
+            showMsgHandle: function (reply, res) {
+                if (res.storageType === this.constant.StorageType.DB || res.storageType === this.constant.StorageType.PC) {
+                    reply.tag = res.reply;
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.HTML) {
+                    reply.tag = res.reply;
+                    reply['type'] = 'html';
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.FILE) {
+                    this.$ajax.get("/other/file/getGeneralFile/" + res.reply, {}).then(res => {
+                        reply['type'] = 'html';
+                        reply.tag = res;
+                    });
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.URL) {
+                    reply.tag = "正在为您访问:" + res.reply;
+                    let urlData = {
+                        class: this.MsgClass.REPLY,
+                        tag: '<iframe src="' + res.reply + '" width="100%" height="400px" frameborder="no" border="0" marginwidth="0" marginheight="0" scrolling="auto" allowtransparency="yes">',
+                        type: 'html',
+                        id: +new Date()
+                    };
+                    this.msgList.push(urlData);
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.PC2) {
+                    let arr = res.reply.split("|");
+                    reply.type = 'ask_answer';
+                    reply.tag = arr;
+                    return;
+                }
+                if (res.storageType === this.constant.StorageType.RECOMMEND) {
+                    reply.tag = "来看看这些";
+                    let recommend = {
+                        class: this.MsgClass.RECOMMEND,
+                        data: JSON.parse(res.reply),
+                        id: +new Date()
+                    };
+                    this.msgList.push(recommend);
+                    return;
+                }
             },
             showStaffHandle: function (reply, res, obj) {
                 if (res.storageType === this.constant.StaffType.WAIT) {
@@ -373,6 +445,18 @@
             waitSend: function (obj) {
                 this.selfSendMsg(obj);
             },
+            //客服信息变更
+            staffInfo:function (obj) {
+                console.log(obj);
+                let reply = {id:-new Date(),class:this.MsgClass.REPLY};
+                if(obj){
+                    reply['tag']='您好,客服【'+(obj.nickname?obj.nickname:obj.username)+'】为您竭诚服务';
+                }else{
+                    reply['tag']='感谢使用,服务已完成,请对本次服务进行评分';
+                }
+                this.msgList.push(reply);
+                this.scrollBottom();
+            }
         }
     }
 </script>

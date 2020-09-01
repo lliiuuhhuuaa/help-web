@@ -30,14 +30,10 @@
                 timeout:null
             }
         },
-        created() {
-            //检查排队
-            this.checkWaitList();
-        },
         computed: {
             //等待数变更
-            waitUpdate() {
-                return this.constant.staffWaitCount;
+            login() {
+                return this.constant.login;
             },
         },
         watch: {
@@ -45,9 +41,9 @@
             content: function (val) {
                 this.send = val.trim() !== '';
             },
-            waitUpdate: function (val,old) {
-                if(old<1&&val>0){
-                    this.checkWaitList();
+            login: function (val) {
+                if(val){
+                    this.getCurrWaitListIndex();
                 }
             }
         },
@@ -77,29 +73,14 @@
                 //发送
                 this.$store.commit("updateState", {waitSend: {tag:item}});
             },
-            //检查排队情况
-            checkWaitList:function () {
-                if(this.timeout){
-                    clearInterval(this.timeout);
-                }
-                this.getCurrWaitListIndex();
-                this.timeout = setInterval(()=>{
-                    this.getCurrWaitListIndex();
-                },5000);
-            },
             getCurrWaitListIndex:function(){
                 if(!this.constant.login){
-                    if(this.timeout){
-                        clearInterval(this.timeout);
-                    }
                     return;
                 }
                 this.$ajax.post("/web/staff/online/getCurrWaitListIndex", {}).then(res => {
                     this.constant.staffWaitCount = res.data;
                     if(res.data>0){
                         this.constant.staffState = true;
-                    }else{
-                        clearInterval(this.timeout);
                     }
                 });
             },
