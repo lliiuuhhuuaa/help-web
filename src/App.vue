@@ -43,6 +43,9 @@
     .text-center{
         text-align: center;
     }
+    .hide{
+        display: none;
+    }
     .point{
         cursor: pointer;
     }

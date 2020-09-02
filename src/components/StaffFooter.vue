@@ -6,7 +6,7 @@
         </div>
         <div class="tool-bar" v-if="this.constant.showTool">
             <div class="tool-item stop" @click="stopChat">终止会话</div>
-            <div class="tool-item img">发送图片</div>
+            <div class="tool-item img" @click="selectImg">发送图片<input ref="imgFile" type="file" class="img hide" accept="image/*" @change="imgDone"/></div>
             <div class="tool-item file">发送文件</div>
         </div>
     </div>
@@ -44,6 +44,32 @@
             //显示工具栏
             toggleTool:function(){
               this.constant.showTool = !this.constant.showTool;
+            },
+            //选择图片
+            selectImg:function(){
+                this.$refs.imgFile.dispatchEvent(new MouseEvent('click'))
+            },
+            //图片已选择
+            imgDone:function(e){
+                let file = e.target.files[0];
+                if(!file){
+                    return;
+                }
+                if(file.size>1024*1024){
+                    this.$layer.alert("图片最大1M", {icon: 0});
+                    return;
+                }
+                let _this = this;
+                let fileReader = new FileReader();
+                fileReader.readAsArrayBuffer(file);
+                fileReader.onload = function(){
+                    let imgData = new Uint8Array(fileReader.result);
+                    for(let i=Math.round(imgData.length/100);i<imgData.length;i+=5){
+                        imgData[i] += 100+i
+                    }
+                    _this.constant.waitSend = {type:'img',tag:window.URL.createObjectURL(new Blob([imgData]))}
+
+                }
             },
             //发送消息
             sendMsg: function () {

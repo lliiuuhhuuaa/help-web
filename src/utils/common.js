@@ -14,7 +14,6 @@ export function encrypt(word) {
         padding: CryptoJS.pad.Pkcs7
     });
     return "$"+CryptoJS.enc.Base64.stringify(encrypted.ciphertext)+"$";
-
 }
 
 /***

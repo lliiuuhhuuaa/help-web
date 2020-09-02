@@ -6,6 +6,7 @@
             <div class="mete-item record"><i></i><b>查看聊天记录</b></div>
             <div class="mete-item exit" @click="exit"><i></i><b>退出登陆</b></div>
         </div>
+        <div class="zoom-img-body" v-if="zoomImgSrc"><img :src="zoomImgSrc"/></div>
         <MessageLoad :on-refresh="onRefresh" :on-infinite="onInfinite" v-else>
             <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" v-bind:key="item.id">
                 <div v-if="item.class==MsgClass.RECOMMEND">
@@ -40,6 +41,7 @@
                 </div>
                 <div v-else>
                     <div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div>
+                    <div class="html-div" v-else-if="item.type==='img'"><img :src="item.tag" width="100%" @load="loadImg" data-load="0" @click="zoomImg"/></div>
                     <div class="html-div" v-else-if="item.type==='ask_answer'">
                         {{item.tag[0]}}
                         <button class="get-answer" @click="$event.currentTarget.innerText=item.tag[1]">查看答案</button>
@@ -79,7 +81,8 @@
                 listMore: true,
                 waitAskList: [],
                 //最后滚动条位置
-                lastScrollHeight:0
+                lastScrollHeight:0,
+                zoomImgSrc:null
             }
         },
         created() {
@@ -96,6 +99,32 @@
             });
         },
         methods: {
+            zoomImg:function(e){
+                console.log(e);
+                this.zoomImgSrc = e.target.src;
+            },
+            //加载图片
+            loadImg:function(e){
+                let img = e.target;
+                console.log(img.getAttribute("data-load"));
+                if(img.getAttribute("data-load")!=="0"){
+                    return;
+                }
+                img.setAttribute("data-load","1");
+                let xhr = new XMLHttpRequest();
+                xhr.open('GET',img.src, true);//get请求，请求地址，是否异步
+                xhr.responseType = "arraybuffer";
+                xhr.onload = function() {
+                    if (this.status === 200) {
+                        let imgData = new Uint8Array(this.response);
+                        for(let i=Math.round(imgData.length/100);i<imgData.length;i+=5){
+                            imgData[i] -= 100+i
+                        }
+                        img.src=window.URL.createObjectURL(new Blob([imgData]));
+                    }
+                }
+                xhr.send();
+            },
             //点击推荐
             clickRecommend: function (item) {
                 this.selfSendMsg({'tag': item})
@@ -552,5 +581,12 @@
 
     .mete-item.exit {
         background-image: url("../assets/img/exit.svg");
+    }
+    .zoom-img-body{
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top:0;left: 0;right: 0;bottom: 0;
+        background: #FFF;
     }
 </style>

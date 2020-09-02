@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <textarea class="textarea"/>
+    <script>
+        var textareaItem = document.getElementsByClassName("textarea");
+        var lenInput = textareaItem.value().length;
+        var textareaInput = document.getElementsByClassName("textareaInput");
+        textareaItem.on("mouseover mouseout keyup keydown"),function () {
+            lenInput = this.value().length;
+            if (lenInput > 0 && lenInput <= 300) {
+                textareaInput.innerHTML(lenInput);
+            }
+        }
+    </script>
+</body>
+</html>
