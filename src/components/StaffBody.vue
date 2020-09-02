@@ -374,7 +374,7 @@
 
     .msg-item.self-msg {
         text-align: right;
-        margin-left: 50px;
+        margin-left: 20%;
     }
 
     .self-msg > div {
@@ -388,7 +388,7 @@
 
     .msg-item.reply-msg {
         text-align: left;
-        margin-right: 50px;
+        margin-right: 20%;
     }
 
     .reply-msg > div {

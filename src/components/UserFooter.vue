@@ -1,5 +1,5 @@
 <template>
-    <div class="footer" v-bind:class="{'focusState':keyboard,'staff-wait-body':this.constant.staffWaitCount>0}">
+    <div class="footer" v-bind:class="{'show-tool':this.constant.showTool,'focusState':keyboard,'staff-wait-body':this.constant.staffWaitCount>0}">
         <div class="staff-wait" v-if="this.constant.staffWaitCount>0"><span>人工客服排队:您当前在第 <span>{{this.constant.staffWaitCount}}</span> 位<button class="exit-list" @click="exitWaitList">退出排队</button></span></div>
         <ul class="common-word">
             <li v-for="item in this.$store.state.commons" :key="item" @click="sendQuickMsg(item)">
@@ -8,7 +8,12 @@
         </ul>
         <div class="input-body">
             <input autocomplete="off" class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg" placeholder="可以点这里输入问题"/>
-            <button class="send-button" v-bind:class="{'active':send}" v-on:click="sendMsg"/>
+            <button class="send-button" v-bind:class="{'active':send}" v-on:click="send?sendMsg():toggleTool()"/>
+        </div>
+        <div class="tool-bar" v-if="this.constant.showTool">
+            <div class="tool-item stop" @click="stopChat">终止会话</div>
+            <div class="tool-item img">发送图片</div>
+            <div class="tool-item file">发送文件</div>
         </div>
     </div>
 </template>
@@ -48,6 +53,10 @@
             }
         },
         methods: {
+            //显示工具栏
+            toggleTool:function(){
+                this.constant.showTool = !this.constant.showTool;
+            },
             //发送消息
             sendMsg: function () {
                 if (!this.send) {
@@ -93,6 +102,22 @@
                         clearInterval(this.timeout);
                     }
                 });
+            },
+            //中止聊天
+            stopChat:function () {
+                let userId = this.constant.activeUserId;
+                if(userId<1){
+                    return;
+                }
+                let _this = this;
+                _this.$layer.confirm('是否确认中止会话?', {icon: 3, title:'中止会话'}, function(index){
+                    _this.$ajax.post("/staff/online/stopChat", {userId:userId},{animation:_this.constant.Animation.PART,alertError:true}).then(() => {
+                        _this.constant.activeUserId = -1;
+                        _this.constant.updatePart = {"delUserList":userId};
+                    });
+                    _this.$layer.close(index);
+                });
+
             }
         }
     }
@@ -144,7 +169,7 @@
 
     .input-body {
         height: 30px;
-        padding: 10px 20px;
+        padding: 10px 0 10px 20px;
         background: #FFF;
     }
 
@@ -153,7 +178,7 @@
         width: 50px;
         height: 30px;
         border: none;
-        background: url("../assets/img/send_grey.svg") no-repeat center;
+        background: url("../assets/img/plus.svg") no-repeat center;
         background-size: 100% 100%;
         outline: none;
     }
@@ -187,5 +212,38 @@
         box-shadow: none;
         font-weight: bold;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+    .tool-bar{
+        height: 60px;
+        width: 100%;
+        background: rgba(65, 152, 199, 0.2);
+        text-align: center;
+    }
+    .tool-bar .tool-item{
+        width: 60px;
+        height: 40px;
+        background-color: #FFF;
+        color: #0099CC;
+        margin: 5px;
+        font-size: 14px;
+        line-height: 65px;
+        border-radius: 10px;
+        padding: 5px;
+        display: inline-block;
+        white-space: nowrap;
+        background-size: 20px 20px;
+        background-repeat: no-repeat;
+        background-position-x: center;
+        background-position-y: 5px;
+        cursor: pointer;
+    }
+    .tool-item.stop {
+        background-image: url("../assets/img/stop.svg");
+    }
+    .tool-item.img {
+        background-image: url("../assets/img/img.svg");
+    }
+    .tool-item.file {
+        background-image: url("../assets/img/file.svg");
     }
 </style>

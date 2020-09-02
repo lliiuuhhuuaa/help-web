@@ -1,10 +1,10 @@
 <template>
-    <div class="body" v-bind:class="{'hide-header':hideHeader,'staff-wait-state':this.constant.staffWaitCount>0}">
+    <div class="body" :style="{height:bodyHeight}">
         <MessageLoad :on-refresh="onRefresh" :on-infinite="onInfinite">
-            <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" v-bind:key="item.id">
+            <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" :key="item.index">
                 <div v-if="item.class==MsgClass.RECOMMEND">
                     <div class="recommend-title">{{item.data.title}}</div>
-                    <div v-for="(it,idx) in item.data.content" v-bind:key="it" @click="clickRecommend(it)">
+                    <div v-for="(it,idx) in item.data.content" v-bind:key="it.indx" @click="clickRecommend(it)">
                         <div class="recommend-item">{{idx+1}}.{{it}}</div>
                     </div>
                 </div>
@@ -25,7 +25,7 @@
 
                     <div class="text-body" v-if="evaluate>0">
                         <textarea class="text-input" v-model="evaluateText" placeholder="这里输入服务评价内容"
-                                  maxlength="100"></textarea>
+                                  maxlength="100"/>
                         <button class="star-submit-btn" @click="starSubmit">提交</button>
                     </div>
                     <div class="text-center" v-else>已经评价完成</div>
@@ -493,6 +493,21 @@
             waitSend() {
                 return this.constant.waitSend;
             },
+            //body高度计算
+            bodyHeight:function(){
+                let height = window.innerHeight;
+                if(this.constant.showTool){
+                    height-=60;
+                }
+                if(this.hideHeader){
+                    height-=50;
+                }
+                if(this.constant.staffWaitCount>0){
+                    height-=80;
+                }
+                console.log(height)
+                return height + 'px';
+            },
         },
         watch: {
             login: function (val) {
@@ -524,6 +539,13 @@
             },
             evaluate: function (obj) {
                 if (obj > 0) {
+                    for(let i=0;i<this.msgList.length;i++){
+                        if(this.msgList[i].class===this.MsgClass.EVALUATE){
+                            this.msgList.splice(i,1);break;
+                        }
+                    }
+                    this.star = -1;
+                    this.evaluateText="";
                     let reply = {id: -(new Date()+2), class: this.MsgClass.EVALUATE, tag: obj};
                     this.msgList.push(reply);
                     this.scrollBottom();
@@ -542,14 +564,6 @@
         overflow: hidden;
         scrollbar-width: none; /* firefox */
         -ms-overflow-style: none; /* IE 10+ */
-    }
-
-    .body.hide-header.staff-wait-state {
-        height: calc(100vh - 130px);
-    }
-
-    .body.staff-wait-state {
-        height: calc(100vh - 180px);
     }
 
     .body::-webkit-scrollbar {
