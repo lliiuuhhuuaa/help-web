@@ -6,8 +6,8 @@
             <div class="mete-item record"><i></i><b>查看聊天记录</b></div>
             <div class="mete-item exit" @click="exit"><i></i><b>退出登陆</b></div>
         </div>
-        <div class="zoom-img-body" v-if="zoomImgSrc"><img :src="zoomImgSrc"/></div>
-        <MessageLoad :on-refresh="onRefresh" :on-infinite="onInfinite" v-else>
+        <ZoomImg/>
+        <MessageLoad :on-refresh="onRefresh" :on-infinite="onInfinite">
             <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" v-bind:key="item.id">
                 <div v-if="item.class==MsgClass.RECOMMEND">
                     <div class="recommend-title">{{item.data.title}}</div>
@@ -41,7 +41,9 @@
                 </div>
                 <div v-else>
                     <div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div>
-                    <div class="html-div" v-else-if="item.type==='img'"><img :src="item.tag" width="100%" @load="loadImg" data-load="0" @click="zoomImg"/></div>
+                    <div class="img-div" v-else-if="item.type==='img'"><UploadProcess :process="item.process"/><img :src="item.tag" @load="loadImg"
+                                                                            @error="loadImg" data-load="0"
+                                                                            @click="zoomImg"/></div>
                     <div class="html-div" v-else-if="item.type==='ask_answer'">
                         {{item.tag[0]}}
                         <button class="get-answer" @click="$event.currentTarget.innerText=item.tag[1]">查看答案</button>
@@ -56,11 +58,15 @@
 
 <script>
     import MessageLoad from "./MessageLoad";
+    import ZoomImg from "@/components/ZoomImg";
+    import UploadProcess from "@/components/UploadProcess";
 
     export default {
         name: 'StaffBody',
         props: {},
         components: {
+            UploadProcess,
+            ZoomImg,
             MessageLoad
         },
         data() {
@@ -81,8 +87,7 @@
                 listMore: true,
                 waitAskList: [],
                 //最后滚动条位置
-                lastScrollHeight:0,
-                zoomImgSrc:null
+                lastScrollHeight: 0,
             }
         },
         created() {
@@ -99,28 +104,27 @@
             });
         },
         methods: {
-            zoomImg:function(e){
-                console.log(e);
-                this.zoomImgSrc = e.target.src;
+            zoomImg: function (e) {
+                this.constant.zoomImgSrc = e.target.src;
             },
             //加载图片
-            loadImg:function(e){
+            loadImg: function (e) {
                 let img = e.target;
-                console.log(img.getAttribute("data-load"));
-                if(img.getAttribute("data-load")!=="0"){
+                if (img.getAttribute("data-load") !== "0") {
                     return;
                 }
-                img.setAttribute("data-load","1");
+                img.setAttribute("data-load", "1");
                 let xhr = new XMLHttpRequest();
-                xhr.open('GET',img.src, true);//get请求，请求地址，是否异步
+                xhr.open('GET', img.src, true);//get请求，请求地址，是否异步
                 xhr.responseType = "arraybuffer";
-                xhr.onload = function() {
+                xhr.onload = function () {
                     if (this.status === 200) {
                         let imgData = new Uint8Array(this.response);
-                        for(let i=Math.round(imgData.length/100);i<imgData.length;i+=5){
-                            imgData[i] -= 100+i
+                        for (let i = Math.round(imgData.length / 100); i < imgData.length; i += 5) {
+                            imgData[i] -= 100 + i
                         }
-                        img.src=window.URL.createObjectURL(new Blob([imgData]));
+                        console.log(3, imgData);
+                        img.src = window.URL.createObjectURL(new Blob([imgData]));
                     }
                 }
                 xhr.send();
@@ -141,7 +145,10 @@
             },
             //请求发送消息
             requestSend: function (obj) {
-                this.$ajax.post("/web/help/tag", {tag: this.$aes.encrypt(obj.tag),userId:this.constant.activeUserId}).then(res => {
+                this.$ajax.post("/web/help/tag", {
+                    tag: this.$aes.encrypt(obj.tag),
+                    userId: this.constant.activeUserId
+                }).then(res => {
                     res = res.data;
                     if (res.state === this.constant.MsgState.STAFF) {
                         this.showStaffHandle(res, obj);
@@ -176,11 +183,11 @@
                         lastId = this.msgList[key].id;
                     }
                 }
-                this.listHelpMsg(this.page + 1,this.constant.activeUserId , lastId, callback);
+                this.listHelpMsg(this.page + 1, this.constant.activeUserId, lastId, callback);
             },
             //加载历史记录
             listHelpMsg: function (page, userId, lastId, callback) {
-                lastId = lastId && lastId>0? lastId : null;
+                lastId = lastId && lastId > 0 ? lastId : null;
                 page = page ? page : 1;
                 this.getDbHelpMsg(page, userId, lastId);
                 this.$ajax.post("/staff/online/listHelpMsg", {
@@ -200,7 +207,7 @@
                     this.page = res.data.page;
                     //缓存数据
                     this.$indexdb.putData(this.$db, "help_msg", data);
-                    if(page>1){
+                    if (page > 1) {
                         this.scrollState = false;
                         setTimeout(() => {
                             this.scrollState = true;
@@ -217,23 +224,25 @@
             getDbHelpMsg(page, userId) {
                 this.$indexdb.getDataByIndex(this.$db, "help_msg", "userId", userId).then(data => {
                     //data排序
-                    if(page>1){
+                    if (page > 1) {
                         this.scrollState = false;
                         setTimeout(() => {
                             this.scrollState = true;
                         }, 1000);
                     }
-                    data.sort((a,b)=>{return b.id-a.id});
-                    let start = (page-1)*this.rows;
-                    let end = page*this.rows;
-                    this.showMsgData(data.slice(start,end));
+                    data.sort((a, b) => {
+                        return b.id - a.id
+                    });
+                    let start = (page - 1) * this.rows;
+                    let end = page * this.rows;
+                    this.showMsgData(data.slice(start, end));
                 })
             },
             showMsgData(data) {
                 if (!data) {
                     return;
                 }
-                if(!(data instanceof Array)){
+                if (!(data instanceof Array)) {
                     data = [data];
                 }
                 let msgObj = null;
@@ -241,7 +250,7 @@
                 for (let i = data.length - 1; i >= 0; i--) {
                     temp = data[i];
                     //防串数据
-                    if(temp.userId!==this.constant.activeUserId){
+                    if (temp.userId !== this.constant.activeUserId) {
                         break;
                     }
                     //检查是否有重复消息
@@ -285,7 +294,7 @@
             //滚动到底部
             scrollBottom: function () {
                 let el = document.getElementById("refresh-scroll");
-                if(!el){
+                if (!el) {
                     return;
                 }
                 if (this.scrollState) {
@@ -298,12 +307,12 @@
                             clearInterval(interval);
                         }
                     }, 10)
-                }else{
+                } else {
                     //非可滚动状态,保持当前位置
                     let count = 100;
-                    el.scrollTop = el.scrollHeight-this.lastScrollHeight;
+                    el.scrollTop = el.scrollHeight - this.lastScrollHeight;
                     let interval = setInterval(() => {
-                        el.scrollTop = el.scrollHeight-this.lastScrollHeight;
+                        el.scrollTop = el.scrollHeight - this.lastScrollHeight;
                         if (--count < 0) {
                             clearInterval(interval);
                         }
@@ -356,7 +365,7 @@
                 }
             },
             //显示工具栏
-            showTool:function () {
+            showTool: function () {
                 this.scrollBottom();
             }
         }
@@ -374,12 +383,15 @@
         -ms-overflow-style: none; /* IE 10+ */
         padding: 2px 0;
     }
-    .body.show-tool{
+
+    .body.show-tool {
         height: calc(100vh - 194px);
     }
-    .body.hide-footer{
+
+    .body.hide-footer {
         height: calc(100vh - 84px);
     }
+
     .body::-webkit-scrollbar {
         display: none; /* Chrome Safari */
     }
@@ -523,6 +535,14 @@
         overflow: auto;
     }
 
+    .img-div {
+        text-align: center;
+        background: none;
+    }
+    .img-div img {
+        max-width: 100%;
+    }
+
     .get-answer {
         float: right;
         padding: 5px;
@@ -581,12 +601,5 @@
 
     .mete-item.exit {
         background-image: url("../assets/img/exit.svg");
-    }
-    .zoom-img-body{
-        width: 100%;
-        height: 100%;
-        position: absolute;
-        top:0;left: 0;right: 0;bottom: 0;
-        background: #FFF;
     }
 </style>

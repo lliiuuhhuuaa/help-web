@@ -67,8 +67,11 @@
                     for(let i=Math.round(imgData.length/100);i<imgData.length;i+=5){
                         imgData[i] += 100+i
                     }
-                    _this.constant.waitSend = {type:'img',tag:window.URL.createObjectURL(new Blob([imgData]))}
-
+                    let obj = {process:0,type:'img',tag:window.URL.createObjectURL(new Blob([imgData]))};
+                    _this.constant.waitSend = obj;
+                    setInterval(()=>{
+                        obj.process++;
+                    },500)
                 }
             },
             //发送消息

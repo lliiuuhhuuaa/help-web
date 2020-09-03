@@ -3,19 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <style>
+        /*圆圈进度*/
+        .circle{
+            width:50px;
+            display:inline-block;
+            height:50px;
+            margin:20px;
+            position: relative;
+            border-radius: 50%;
+        }
+        .pie_left, .pie_right{
+            width:50px;
+            height:50px;
+            position: absolute;
+            top:0px;
+            left:0px;
+        }
+        .left, .right{
+            position: absolute;
+            left:0px;
+            top:0px;
+            border-radius:50%;
+            width:100%;
+            height:100%;
+        }
+        .pie_left, .left{
+            clip: rect(auto, 25px, auto, auto);
+        }
+        .pie_right, .right{
+            clip:rect(0, auto, auto, 25px);
+        }
+    </style>
 </head>
 <body>
-    <textarea class="textarea"/>
-    <script>
-        var textareaItem = document.getElementsByClassName("textarea");
-        var lenInput = textareaItem.value().length;
-        var textareaInput = document.getElementsByClassName("textareaInput");
-        textareaItem.on("mouseover mouseout keyup keydown"),function () {
-            lenInput = this.value().length;
-            if (lenInput > 0 && lenInput <= 300) {
-                textareaInput.innerHTML(lenInput);
-            }
-        }
-    </script>
+<div class="circle col-md-2" style="background: #91DBF2;">
+    <div class="pie_left"><div class="left" style="background: #23B7E5;"></div></div>
+    <div class="pie_right"><div class="right" style="background: #23B7E5;"></div></div>
+    <div class="mask">
+        50%
+    </div>
+</div>
+<script src="http://www.jq22.com/jquery/jquery-1.10.2.js"></script>
+<script>
+    $(function () {
+        $(".circle").each(function(){
+            //var num = $(this).find(".mask span").text()*3.6;
+            var num = 0;
+            setInterval(()=>{
+                num--;
+                if(num<=180){
+                    if(num == 0){
+                        $(this).find(".left").css({"transform":"rotate("+(num-180)+"deg)", "transition": "transform 0.5s ease-in"});
+                        $(this).find(".right").css({"transform":"rotate("+(num-180)+"deg)","transition": "transform 0.5s ease"});
+                    }else{
+                        $(this).find(".right").css("transform","rotate(180deg)");
+                        $(this).find(".left").css({"transform":"rotate("+(180-num)+"deg)","transition": "transform 0.5s ease"});
+                    }
+                }else{
+                    $(this).find(".left").css({"transform":"rotate(0deg)", "transition": "transform 0.5s ease-in"});
+                    $(this).find(".right").css({"transform":"rotate("+(360-num)+"deg)","transition": "transform 0.2s 0.5s ease-in"});
+                }
+            },1000)
+
+        })
+    })
+</script>
 </body>
 </html>

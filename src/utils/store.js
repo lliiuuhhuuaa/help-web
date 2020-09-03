@@ -54,6 +54,8 @@ const store = new Vuex.Store({
         updatePart:null,
         //显示foot
         showFooter:false,
+        //放大图片
+        zoomImgSrc:null
 
     },
     mutations: {

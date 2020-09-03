@@ -505,7 +505,6 @@
                 if(this.constant.staffWaitCount>0){
                     height-=80;
                 }
-                console.log(height)
                 return height + 'px';
             },
         },
