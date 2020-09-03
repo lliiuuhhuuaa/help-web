@@ -4,70 +4,74 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <style>
-        /*圆圈进度*/
-        .circle{
-            width:50px;
-            display:inline-block;
-            height:50px;
-            margin:20px;
+        .circle_process{
             position: relative;
+            width: 50px;
+            height : 50px;
+        }
+        .circle_process .wrapper{
+            width: 25px;
+            height: 50px;
+            position: absolute;
+            top:0;
+            overflow: hidden;
+        }
+        .circle_process .right{
+            right:0;
+        }
+        .circle_process .left{
+            left:0;
+        }
+        .circle_process .circle{
+            width: 46px;
+            height: 46px;
+            border:2px solid transparent;
             border-radius: 50%;
-        }
-        .pie_left, .pie_right{
-            width:50px;
-            height:50px;
             position: absolute;
-            top:0px;
-            left:0px;
+            top:0;
+            transform : rotate(-135deg);
         }
-        .left, .right{
-            position: absolute;
-            left:0px;
-            top:0px;
-            border-radius:50%;
-            width:100%;
-            height:100%;
+        .circle_process .rightcircle{
+            border-top:2px solid green;
+            border-right:2px solid green;
+            right:0;
+            -webkit-animation: circle_right 5s linear infinite;
         }
-        .pie_left, .left{
-            clip: rect(auto, 25px, auto, auto);
+        .circle_process .leftcircle{
+            border-bottom:2px solid green;
+            border-left:2px solid green;
+            left:0;
+            -webkit-animation: circle_left 5s linear infinite;
         }
-        .pie_right, .right{
-            clip:rect(0, auto, auto, 25px);
+        @-webkit-keyframes circle_right{
+            0%{
+                -webkit-transform: rotate(-135deg);
+            }
+            50%,100%{
+                -webkit-transform: rotate(45deg);
+            }
+        }
+        @-webkit-keyframes circle_left{
+            0%,50%{
+                -webkit-transform: rotate(-135deg);
+            }
+            100%{
+                -webkit-transform: rotate(45deg);
+            }
+        }
+        body{
+            background: #555;
         }
     </style>
 </head>
 <body>
-<div class="circle col-md-2" style="background: #91DBF2;">
-    <div class="pie_left"><div class="left" style="background: #23B7E5;"></div></div>
-    <div class="pie_right"><div class="right" style="background: #23B7E5;"></div></div>
-    <div class="mask">
-        50%
+<div class="circle_process">
+    <div class="wrapper right">
+        <div class="circle rightcircle"></div>
+    </div>
+    <div class="wrapper left">
+        <div class="circle leftcircle" id="leftcircle"></div>
     </div>
 </div>
-<script src="http://www.jq22.com/jquery/jquery-1.10.2.js"></script>
-<script>
-    $(function () {
-        $(".circle").each(function(){
-            //var num = $(this).find(".mask span").text()*3.6;
-            var num = 0;
-            setInterval(()=>{
-                num--;
-                if(num<=180){
-                    if(num == 0){
-                        $(this).find(".left").css({"transform":"rotate("+(num-180)+"deg)", "transition": "transform 0.5s ease-in"});
-                        $(this).find(".right").css({"transform":"rotate("+(num-180)+"deg)","transition": "transform 0.5s ease"});
-                    }else{
-                        $(this).find(".right").css("transform","rotate(180deg)");
-                        $(this).find(".left").css({"transform":"rotate("+(180-num)+"deg)","transition": "transform 0.5s ease"});
-                    }
-                }else{
-                    $(this).find(".left").css({"transform":"rotate(0deg)", "transition": "transform 0.5s ease-in"});
-                    $(this).find(".right").css({"transform":"rotate("+(360-num)+"deg)","transition": "transform 0.2s 0.5s ease-in"});
-                }
-            },1000)
-
-        })
-    })
-</script>
 </body>
 </html>

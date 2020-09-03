@@ -41,9 +41,7 @@
                 </div>
                 <div v-else>
                     <div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div>
-                    <div class="img-div" v-else-if="item.type==='img'"><UploadProcess :process="item.process"/><img :src="item.tag" @load="loadImg"
-                                                                            @error="loadImg" data-load="0"
-                                                                            @click="zoomImg"/></div>
+                    <div class="img-div" v-else-if="item.type==='img'"><UploadProcess :process="item.process" /><img src="@/assets/img/loading.svg" :data-src="item.tag"  @click="zoomImg" v-on:load.once="loadImg($event,item)"/></div>
                     <div class="html-div" v-else-if="item.type==='ask_answer'">
                         {{item.tag[0]}}
                         <button class="get-answer" @click="$event.currentTarget.innerText=item.tag[1]">查看答案</button>
@@ -94,7 +92,7 @@
             let _this = this;
             window.SD = function (tag) {
                 _this.selfSendMsg({'tag': tag})
-            }
+            };
             //监听消息
             this.sockets.subscribe("chatMsg", data => {
                 //缓存数据
@@ -104,18 +102,21 @@
             });
         },
         methods: {
-            zoomImg: function (e) {
+            zoomImg:function (e) {
                 this.constant.zoomImgSrc = e.target.src;
             },
             //加载图片
-            loadImg: function (e) {
+            loadImg:function (e) {
                 let img = e.target;
-                if (img.getAttribute("data-load") !== "0") {
+                console.log(img);
+                if(img.getAttribute("data-load")){
                     return;
                 }
-                img.setAttribute("data-load", "1");
+                console.log(2222);
+                img.src="@/assets/img/loading.svg";
+                img.setAttribute("data-load",1);
                 let xhr = new XMLHttpRequest();
-                xhr.open('GET', img.src, true);//get请求，请求地址，是否异步
+                xhr.open('GET', img.getAttribute("data-src"), true);//get请求，请求地址，是否异步
                 xhr.responseType = "arraybuffer";
                 xhr.onload = function () {
                     if (this.status === 200) {
@@ -123,10 +124,9 @@
                         for (let i = Math.round(imgData.length / 100); i < imgData.length; i += 5) {
                             imgData[i] -= 100 + i
                         }
-                        console.log(3, imgData);
                         img.src = window.URL.createObjectURL(new Blob([imgData]));
                     }
-                }
+                };
                 xhr.send();
             },
             //点击推荐
