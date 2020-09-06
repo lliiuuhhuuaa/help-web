@@ -100,6 +100,9 @@
                             for (let i = 0; i < this.constant.stopUserId.length; i++) {
                                 if (this.constant.stopUserId[i] === val) {
                                     this.constant.stopUserId.splice(i, 1);
+                                    if(val===this.constant.activeUserId){
+                                        this.constant.activeUserId =  -1;
+                                    }
                                 }
                             }
 
