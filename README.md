@@ -1,5 +1,11 @@
 # help
 
+
+项目测试地址
+客服端 https://help.lliiuuhhuuaa.cn/#/login
+用户端 https://help.lliiuuhhuuaa.cn/?cert=0000000000#/
+
+
 ## Project setup
 ```
 npm install
@@ -19,6 +25,3 @@ npm run build
 ```
 npm run lint
 ```
-项目测试地址
-客服端 https://help.lliiuuhhuuaa.cn/#/login
-用户端 https://help.lliiuuhhuuaa.cn/?cert=0000000000#/
