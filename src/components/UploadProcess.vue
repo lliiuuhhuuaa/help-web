@@ -1,21 +1,30 @@
 <template>
-    <div class="circle_process" v-if="process!=null">
+    <div class="circle_process" v-if="item!=null&&item.process!=null" @click="errorHandle(item)">
         <div class="wrapper right">
-            <div class="circle rightcircle" :style="{transform:process<=50?'rotate('+ (-135+process*3.6) +'deg)':'rotate(45deg)'}"></div>
+            <div class="circle rightcircle" :style="{transform:item.process<=50?'rotate('+ (-135+item.process*3.6) +'deg)':'rotate(45deg)'}"></div>
         </div>
         <div class="wrapper left">
-            <div class="circle leftcircle" :style="{transform:process<=50?'rotate(-135deg)':'rotate('+ (-135+(process-50)*3.6) +'deg)'}"></div>
+            <div class="circle leftcircle" :style="{transform:item.process<=50?'rotate(-135deg)':'rotate('+ (-135+(item.process-50)*3.6) +'deg)'}"></div>
         </div>
-        <div class="process-inner">{{process}}%</div>
+        <div :style="{color:item.process<0?'#FF7867':'#000'}" class="process-inner">{{item.process>0?Math.floor(item.process)+'%':item.process===0?'准备中':'失败'}}</div>
     </div>
 </template>
 <script>
     export default {
         props: {
-            process: {
-                type: Number, default: null
+            //此处接收一个对象,如果是单纯的数字,会导致动画同级元素刷新,原因不知
+            item: {
+                type : Object, default: null
             },
         },
+        methods:{
+            errorHandle:function(item) {
+                if(item.process==null||item.process>=0){
+                    return;
+                }
+                console.log(item.process);
+            }
+        }
     }
 </script>
 <style scoped>
@@ -64,23 +73,6 @@
         left:0;
         -webkit-animation: circle_left 5s linear infinite;
     }
-    /*@-webkit-keyframes circle_right{*/
-    /*    0%{*/
-    /*        -webkit-transform: rotate(-135deg);*/
-    /*    }*/
-    /*    50%,100%{*/
-    /*        -webkit-transform: rotate(45deg);*/
-    /*    }*/
-    /*}*/
-    /*@-webkit-keyframes circle_left{*/
-    /*    0%,50%{*/
-    /*        -webkit-transform: rotate(-135deg);*/
-    /*    }*/
-    /*    100%{*/
-    /*        -webkit-transform: rotate(45deg);*/
-    /*    }*/
-    /*    }*/
-    /*}*/
     .process-inner {
         width: 50px;
         height: 50px;

@@ -6,71 +6,37 @@
             <div class="mete-item record"><i></i><b>查看聊天记录</b></div>
             <div class="mete-item exit" @click="exit"><i></i><b>退出登陆</b></div>
         </div>
-        <ZoomImg/>
-        <MessageLoad :on-refresh="onRefresh" :on-infinite="onInfinite">
+        <div class="msg-item-body-shelter" v-if="showShelterList.length>0">
+            <div class="msg-item" v-bind:class="item.class" v-for="item in showShelterList" v-bind:key="item.id">
+                <ChatMsg :item="item"/>
+            </div>
+        </div>
+        <MessageLoad :on-refresh="onRefresh">
             <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" v-bind:key="item.id">
-                <div v-if="item.class==MsgClass.RECOMMEND">
-                    <div class="recommend-title">{{item.data.title}}</div>
-                    <div v-for="(it,idx) in item.data.content" v-bind:key="it" @click="clickRecommend(it)">
-                        <div class="recommend-item">{{idx+1}}.{{it}}</div>
-                    </div>
-                </div>
-                <div v-else-if="item.class==MsgClass.ADVERTISING">
-                    <div class="advertising-img" v-if="item.data.img"><img v-bind:src="item.data.img"></div>
-                    <div class="advertising-body">
-                        <div class="advertising-title">
-                            <div v-for="(it,index) in item.data.content" v-bind:key="it.classify"
-                                 @click="switchList(index)"
-                                 v-bind:class="{'active':advertising[advertisingIndex].classify==it.classify}">
-                                {{it.classify}}
-                            </div>
-                        </div>
-                        <div class="advertising-list-left">
-                            <div>问题推荐</div>
-                        </div>
-                        <div class="advertising-list-right">
-                            <div class="advertising-list">
-                                <div v-for="(li,index) in advertising[advertisingIndex].list" v-bind:key="li"
-                                     @click="clickRecommend(li)">
-                                    <span>{{index+1}}.{{li}}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="clear: both"></div>
-                    </div>
-                </div>
-                <div v-else>
-                    <div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div>
-                    <div class="img-div" v-else-if="item.type==='img'"><UploadProcess :process="item.process" /><img src="@/assets/img/loading.svg" :data-src="item.tag"  @click="zoomImg" v-on:load.once="loadImg($event,item)"/></div>
-                    <div class="html-div" v-else-if="item.type==='ask_answer'">
-                        {{item.tag[0]}}
-                        <button class="get-answer" @click="$event.currentTarget.innerText=item.tag[1]">查看答案</button>
-                    </div>
-                    <div v-else>{{item.tag}}</div>
-                </div>
+                <ChatMsg :item="item"/>
             </div>
         </MessageLoad>
+        <div class="to-bottom point" v-if="constant.showScrollBottom" @click="scrollToBottom">回到底部</div>
     </div>
 
 </template>
 
 <script>
+    import ChatMsg from "./ChatMsg";
     import MessageLoad from "./MessageLoad";
-    import ZoomImg from "@/components/ZoomImg";
-    import UploadProcess from "@/components/UploadProcess";
 
     export default {
         name: 'StaffBody',
         props: {},
         components: {
-            UploadProcess,
-            ZoomImg,
-            MessageLoad
+            MessageLoad,
+            ChatMsg,
         },
         data() {
             return {
                 MsgClass: {
                     "SELF": "self-msg",
+                    "SYSTEM": "system-msg",
                     "REPLY": "reply-msg",
                     "RECOMMEND": "recommend-msg",
                     "ADVERTISING": "advertising-msg"
@@ -79,13 +45,13 @@
                 scrollState: true, // 是否可以滑动
                 loaded: false,
                 page: 0,
-                rows: 20,
+                rows: 10,
                 constant: this.$store.state,
                 staffState: false,
                 listMore: true,
                 waitAskList: [],
-                //最后滚动条位置
-                lastScrollHeight: 0,
+                //显示遮挡层
+                showShelterList:[],
             }
         },
         created() {
@@ -98,67 +64,59 @@
                 //缓存数据
                 this.$indexdb.putData(this.$db, "help_msg", data);
                 this.showMsgData(data);
-                this.scrollBottom();
+                this.$show.scrollBottom(this);
             });
         },
         methods: {
-            zoomImg:function (e) {
-                this.constant.zoomImgSrc = e.target.src;
-            },
-            //加载图片
-            loadImg:function (e) {
-                let img = e.target;
-                console.log(img);
-                if(img.getAttribute("data-load")){
-                    return;
-                }
-                console.log(2222);
-                img.src="@/assets/img/loading.svg";
-                img.setAttribute("data-load",1);
-                let xhr = new XMLHttpRequest();
-                xhr.open('GET', img.getAttribute("data-src"), true);//get请求，请求地址，是否异步
-                xhr.responseType = "arraybuffer";
-                xhr.onload = function () {
-                    if (this.status === 200) {
-                        let imgData = new Uint8Array(this.response);
-                        for (let i = Math.round(imgData.length / 100); i < imgData.length; i += 5) {
-                            imgData[i] -= 100 + i
-                        }
-                        img.src = window.URL.createObjectURL(new Blob([imgData]));
-                    }
-                };
-                xhr.send();
-            },
             //点击推荐
             clickRecommend: function (item) {
                 this.selfSendMsg({'tag': item})
             },
             //发送消息
             selfSendMsg: function (obj) {
+                if(obj.onlySend){
+                    //只发送
+                    this.requestSend(obj);
+                    return;
+                }
+                console.log(obj);
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
                 //显示消息
+                this.constant.showScrollBottom = false;
                 this.msgList.push(obj);
-                this.scrollBottom();
+                this.$show.scrollBottom(this);
                 //请求发送
-                this.requestSend(obj);
+                if(!obj.onlyShow){
+                    //非只显示
+                    this.requestSend(obj);
+                }
             },
             //请求发送消息
             requestSend: function (obj) {
-                this.$ajax.post("/web/help/tag", {
+                let data = {
                     tag: this.$aes.encrypt(obj.tag),
                     userId: this.constant.activeUserId
-                }).then(res => {
+                };
+                if (obj.storageType) {
+                    data['storageType'] = obj.storageType;
+                }
+                this.$ajax.post("/web/help/tag", data).then(res => {
                     res = res.data;
                     if (res.state === this.constant.MsgState.STAFF) {
                         this.showStaffHandle(res, obj);
-                        this.scrollBottom();
                         return;
                     }
                 }).catch(e => {
+                    console.log(e);
+                    if(obj.storageType===this.constant.StorageType.CLOUD_IMG||obj.storageType===this.constant.StorageType.CLOUD_FILE){
+                        obj.process = this.constant.ResultCode.ERROR_SEND;
+                        return;
+                    }
                     //回复消息为空时,操作本消息
                     obj.tag = "<s>" + obj.tag + "</s><span style='color:#D00;font-size: 14px'>(" + e.message + ")</span>";
                     obj.type = 'html';
+                    obj.id = -obj.id;
                 });
             },
             showStaffHandle: function (res, obj) {
@@ -168,12 +126,6 @@
                     return;
                 }
 
-            },
-            //切换显示列表
-            switchList: function (index) {
-                this.advertisingIndex = index;
-                //更新下标，强制更新视图
-                this.$forceUpdate();
             },
             //加载历史记录
             getList: function (callback) {
@@ -189,7 +141,7 @@
             listHelpMsg: function (page, userId, lastId, callback) {
                 lastId = lastId && lastId > 0 ? lastId : null;
                 page = page ? page : 1;
-                this.getDbHelpMsg(page, userId, lastId);
+                this.getDbHelpMsg(page, userId);
                 this.$ajax.post("/staff/online/listHelpMsg", {
                     page: page,
                     rows: this.rows,
@@ -208,16 +160,19 @@
                     //缓存数据
                     this.$indexdb.putData(this.$db, "help_msg", data);
                     if (page > 1) {
-                        this.scrollState = false;
+                        if (callback) {
+                            callback("加载成功");
+                        }
                         setTimeout(() => {
-                            this.scrollState = true;
-                        }, 1000);
+                            this.showShelterList = this.msgList.slice(0,10);
+                        }, 500);
                     }
-                    this.showMsgData(data);
-                    if (callback) {
-                        callback("加载成功");
-                    }
-                    this.scrollBottom();
+                    setTimeout(()=>{
+                        this.showMsgData(data);
+                    },600);
+                    setTimeout(()=>{
+                        this.showShelterList = [];
+                    },800);
                 });
             },
             //获取本地数据库消息
@@ -225,17 +180,15 @@
                 this.$indexdb.getDataByIndex(this.$db, "help_msg", "userId", userId).then(data => {
                     //data排序
                     if (page > 1) {
-                        this.scrollState = false;
-                        setTimeout(() => {
-                            this.scrollState = true;
-                        }, 1000);
+                        return;
                     }
                     data.sort((a, b) => {
                         return b.id - a.id
                     });
                     let start = (page - 1) * this.rows;
                     let end = page * this.rows;
-                    this.showMsgData(data.slice(start, end));
+                    data = data.slice(start, end);
+                    this.showMsgData(data);
                 })
             },
             showMsgData(data) {
@@ -245,9 +198,9 @@
                 if (!(data instanceof Array)) {
                     data = [data];
                 }
-                let msgObj = null;
                 let temp = null;
-                for (let i = data.length - 1; i >= 0; i--) {
+                let msgObj = null;
+                for (let i =0; i < data.length; i++) {
                     temp = data[i];
                     //防串数据
                     if (temp.userId !== this.constant.activeUserId) {
@@ -266,58 +219,27 @@
                     }
                     msgObj = {
                         id: temp.id,
+                        tag: temp.msg,
                         class: temp.direct !== 1 ? this.MsgClass.SELF : this.MsgClass.REPLY,
-                        tag: temp.msg + "<span style='font-size: 14px;position: absolute;top: -5px;" + (temp.direct !== 1 ? "right" : "left") + ": 20px;color: #999;'>" + new Date(temp.createDate).format('yyyy-MM-dd HH:mm:ss') + "</span>",
-                        type: 'html'
+                        createDate: temp.createDate,
+                        storageType:temp.storageType,
+                        process:null,
                     };
-                    this.scrollBottom();
+                    if(temp.info){
+                        msgObj['info'] = JSON.parse(temp.info);
+                    }
                     this.msgList.splice(0, 0, msgObj);
                     this.msgList.sort((a, b) => {
                         return a.id - b.id
                     });
-                    this.scrollBottom();
                 }
             },
             onRefresh(done) {
                 if (this.listMore) {
-                    //记录当前滚动条位置
-                    this.lastScrollHeight = document.getElementById("refresh-scroll").scrollHeight;
-                    console.log(this.lastScrollHeight);
                     this.getList(done);
                 } else {
                     done("真的没有了");
-                }
-            },
-            onInfinite(done) {
-                setTimeout(() => done(), 1000);
-            },
-            //滚动到底部
-            scrollBottom: function () {
-                let el = document.getElementById("refresh-scroll");
-                if (!el) {
-                    return;
-                }
-                if (this.scrollState) {
-                    //可滚动
-                    el.scrollTop = el.scrollHeight;
-                    let count = 5;
-                    let interval = setInterval(() => {
-                        el.scrollTop = el.scrollHeight;
-                        if (--count < 0) {
-                            clearInterval(interval);
-                        }
-                    }, 10)
-                } else {
-                    //非可滚动状态,保持当前位置
-                    let count = 100;
-                    el.scrollTop = el.scrollHeight - this.lastScrollHeight;
-                    let interval = setInterval(() => {
-                        el.scrollTop = el.scrollHeight - this.lastScrollHeight;
-                        if (--count < 0) {
-                            clearInterval(interval);
-                        }
-                    }, 5)
-
+                    this.showShelterList = [];
                 }
             },
             exit: function () {
@@ -329,7 +251,11 @@
                     this.constant.login = false;
                     this.$router.push({path: '/login'})
                 });
-
+            },
+            //滚动到底部
+            scrollToBottom:function () {
+                this.constant.showScrollBottom = false;
+                this.$show.scrollBottom(this);
             }
         },
         computed: {
@@ -341,33 +267,28 @@
             activeUser() {
                 return this.constant.activeUserId;
             },
-            //显示工具栏
-            showTool() {
-                return this.constant.showTool;
-            }
         },
         watch: {
             msgList: function () {
-                this.scrollBottom();
+               this.$show.scrollBottom(this);
             },
             //待发送更新
             waitSend: function (obj) {
-                this.selfSendMsg(obj);
+                if(obj){
+                    this.selfSendMsg(obj);
+                }
             },
             //激活用户变更
             activeUser: function (id) {
                 this.msgList = [];
                 this.listMore = true;
                 this.constant.showTool = false;
+                this.constant.showScrollBottom = false;
                 this.constant.showFooter = id > 0;
                 if (id > 0) {
                     this.listHelpMsg(1, id);
                 }
             },
-            //显示工具栏
-            showTool: function () {
-                this.scrollBottom();
-            }
         }
     }
 </script>
@@ -382,6 +303,7 @@
         scrollbar-width: none; /* firefox */
         -ms-overflow-style: none; /* IE 10+ */
         padding: 2px 0;
+        position: relative;
     }
 
     .body.show-tool {
@@ -531,31 +453,6 @@
         float: right;
     }
 
-    .html-div {
-        overflow: auto;
-    }
-
-    .img-div {
-        text-align: center;
-        background: none;
-    }
-    .img-div img {
-        max-width: 100%;
-    }
-
-    .get-answer {
-        float: right;
-        padding: 5px;
-        cursor: pointer;
-        border: none;
-        border-radius: 5px;
-        background: rgba(120, 200, 240, 0.9);
-        color: #FFF;
-        outline: none;
-        box-shadow: none;
-        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-    }
-
     .no-user-body {
         text-align: center;
     }
@@ -601,5 +498,25 @@
 
     .mete-item.exit {
         background-image: url("../assets/img/exit.svg");
+    }
+    .msg-item-body-shelter{
+        width: 100%;height: 100%;
+        z-index: 10;
+    }
+    .to-bottom{
+        position: absolute;
+        padding:2px 5px;
+        bottom: 5px;
+        right: 12px;
+        background-color: #FFF;
+        width: 80px;
+        height: 30px;
+        text-align: left;
+        line-height: 30px;
+        background-size: 25px 25px;
+        background-repeat: no-repeat;
+        background-position-x: 65px;
+        background-position-y: center;
+        background-image: url("../assets/img/down.svg");
     }
 </style>

@@ -1,16 +1,17 @@
 <template>
-    <div class="body" :style="{height:bodyHeight}">
-        <MessageLoad :on-refresh="onRefresh" :on-infinite="onInfinite">
-            <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" :key="item.index">
-                <div v-if="item.class==MsgClass.RECOMMEND">
+    <div class="body" :style="{height:calcHeight}">
+        <div class="msg-item-body-shelter" v-if="showShelterList.length>0">
+            <div class="msg-item" v-bind:class="item.class" v-for="item in showShelterList" v-bind:key="item.id">
+                <div v-if="item.class===MsgClass.RECOMMEND">
                     <div class="recommend-title">{{item.data.title}}</div>
                     <div v-for="(it,idx) in item.data.content" v-bind:key="it.indx" @click="clickRecommend(it)">
                         <div class="recommend-item">{{idx+1}}.{{it}}</div>
                     </div>
                 </div>
-                <div v-if="item.class==MsgClass.EVALUATE">
+                <div v-if="item.class===MsgClass.EVALUATE">
                     <div class="star-body">
-                        <ul @mousemove="starMouseOver" @click="selectStar=!selectStar">
+                        <!--click与touchstart一起用兼容手机不需要锁定-->
+                        <ul @mousemove="starMouseOver" @click="starSelectState" @touchstart="starSelectState">
                             <li class="star-item" v-bind:class="{'half':star>0,'full':star>1}" v-bind:value="1"></li>
                             <li class="star-item" v-bind:class="{'half':star>2,'full':star>3}" v-bind:value="2"></li>
                             <li class="star-item" v-bind:class="{'half':star>4,'full':star>5}" v-bind:value="3"></li>
@@ -31,13 +32,13 @@
                     <div class="text-center" v-else>已经评价完成</div>
 
                 </div>
-                <div v-else-if="item.class==MsgClass.ADVERTISING">
+                <div v-else-if="item.class===MsgClass.ADVERTISING">
                     <div class="advertising-img" v-if="item.data.img"><img v-bind:src="item.data.img"></div>
                     <div class="advertising-body">
                         <div class="advertising-title">
                             <div v-for="(it,index) in item.data.content" v-bind:key="it.classify"
                                  @click="switchList(index)"
-                                 v-bind:class="{'active':advertising[advertisingIndex].classify==it.classify}">
+                                 v-bind:class="{'active':advertising[advertisingIndex].classify===it.classify}">
                                 {{it.classify}}
                             </div>
                         </div>
@@ -55,22 +56,76 @@
                         <div style="clear: both"></div>
                     </div>
                 </div>
-                <div v-else>
-                    <div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div>
-                    <div class="html-div" v-else-if="item.type==='ask_answer'">
-                        {{item.tag[0]}}
-                        <button class="get-answer" @click="$event.currentTarget.innerText=item.tag[1]">查看答案</button>
+                <ChatMsg v-else :item="item"/>
+            </div>
+        </div>
+        <MessageLoad :on-refresh="onRefresh">
+            <div class="msg-item" :class="item.class" v-for="item in msgList" :key="item.index">
+                <div v-if="item.class===MsgClass.RECOMMEND">
+                    <div class="recommend-title">{{item.data.title}}</div>
+                    <div v-for="(it,idx) in item.data.content" v-bind:key="it.indx" @click="clickRecommend(it)">
+                        <div class="recommend-item">{{idx+1}}.{{it}}</div>
                     </div>
-                    <div v-else>{{item.tag}}</div>
                 </div>
+                <div v-if="item.class===MsgClass.EVALUATE">
+                    <div class="star-body">
+                        <!--click与touchstart一起用兼容手机不需要锁定-->
+                        <ul @mousemove="starMouseOver" @click="starSelectState" @touchstart="starSelectState">
+                            <li class="star-item" v-bind:class="{'half':star>0,'full':star>1}" v-bind:value="1"></li>
+                            <li class="star-item" v-bind:class="{'half':star>2,'full':star>3}" v-bind:value="2"></li>
+                            <li class="star-item" v-bind:class="{'half':star>4,'full':star>5}" v-bind:value="3"></li>
+                            <li class="star-item" v-bind:class="{'half':star>6,'full':star>7}" v-bind:value="4"></li>
+                            <li class="star-item" v-bind:class="{'half':star>8,'full':star>9}" v-bind:value="5"></li>
+                        </ul>
+                        <div class="star-state" v-if="star>-1"><span
+                                v-text="star<1?'极差':star<2?'差':star<4?'不满意':star<6?'一般吧':star<8?'挺好的':star<10?'很好':'极好'"></span>
+                            <span class="star-num">{{star}}</span>分
+                        </div>
+                    </div>
+
+                    <div class="text-body" v-if="evaluate>0">
+                        <textarea class="text-input" v-model="evaluateText" placeholder="这里输入服务评价内容"
+                                  maxlength="100"/>
+                        <button class="star-submit-btn" @click="starSubmit">提交</button>
+                    </div>
+                    <div class="text-center" v-else>已经评价完成</div>
+
+                </div>
+                <div v-else-if="item.class===MsgClass.ADVERTISING">
+                    <div class="advertising-img" v-if="item.data.img"><img v-bind:src="item.data.img"></div>
+                    <div class="advertising-body">
+                        <div class="advertising-title">
+                            <div v-for="(it,index) in item.data.content" v-bind:key="it.classify"
+                                 @click="switchList(index)"
+                                 v-bind:class="{'active':advertising[advertisingIndex].classify===it.classify}">
+                                {{it.classify}}
+                            </div>
+                        </div>
+                        <div class="advertising-list-left">
+                            <div>问题推荐</div>
+                        </div>
+                        <div class="advertising-list-right">
+                            <div class="advertising-list">
+                                <div v-for="(li,index) in advertising[advertisingIndex].list" v-bind:key="li"
+                                     @click="clickRecommend(li)">
+                                    <span>{{index+1}}.{{li}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="clear: both"></div>
+                    </div>
+                </div>
+                <ChatMsg v-else :item="item"/>
             </div>
         </MessageLoad>
+        <div class="to-bottom point" v-if="constant.showScrollBottom" @click="scrollToBottom">回到底部</div>
     </div>
 
 </template>
 
 <script>
     import MessageLoad from "./MessageLoad";
+    import ChatMsg from "./ChatMsg";
 
     export default {
         name: 'MessageBody',
@@ -78,7 +133,8 @@
             hideHeader: Boolean
         },
         components: {
-            MessageLoad
+            ChatMsg,
+            MessageLoad,
         },
         data() {
             return {
@@ -93,11 +149,9 @@
                 scrollState: true, // 是否可以滑动
                 loaded: false,
                 page: 0,
-                rows: 20,
+                rows: 10,
                 constant: this.$store.state,
                 listMore: true,
-                //客服信息
-                staffInfo: null,
                 //评价
                 evaluate: -1,
                 //当前星级
@@ -106,6 +160,8 @@
                 evaluateText: "",
                 //可选星
                 selectStar:true,
+                //显示遮挡层
+                showShelterList:[],
             }
         },
         created() {
@@ -131,8 +187,9 @@
 
             //获取当前人工客服状态
             getCurrStaffState: function () {
-                this.$ajax.post("/web/staff/online/getCurrStaffState", {}).then(res => {
-                    this.constant.staffState = res.data;
+                this.$ajax.post("/web/staff/online/getCurrStaffInfo", {}).then(res => {
+                    this.constant.staffState = res.data!=null;
+                    this.constant.staffInfo = res.data;
                 })
             },
             initData: function () {
@@ -169,7 +226,7 @@
                             tag: '正在等待分配客服,您可以先描述问题,客服分配后能及时了解问题',
                         };
                         this.msgList.push(reply);
-                        this.scrollBottom();
+                       this.$show.scrollBottom(this);
                     }
                 });
             },
@@ -197,10 +254,15 @@
                     }
                     msgObj = {
                         id: temp.id,
-                        class: temp.direct === 1 ? this.MsgClass.SELF : this.MsgClass.REPLY,
-                        tag: temp.msg + "<span style='font-size: 14px;position: absolute;top: -5px;" + (temp.direct === 1 ? "right" : "left") + ": 20px;color: #999;'>" + new Date(temp.createDate).format('yyyy-MM-dd HH:mm:ss') + "</span>",
-                        type: 'html'
+                        tag: temp.msg,
+                        class: temp.direct !== 1 ? this.MsgClass.REPLY:this.MsgClass.SELF,
+                        createDate: temp.createDate,
+                        storageType:temp.storageType,
+                        process:null,
                     };
+                    if(temp.info){
+                        msgObj['info'] = JSON.parse(temp.info);
+                    }
                     if (after) {
                         this.msgList.push(msgObj);
                     } else {
@@ -212,7 +274,7 @@
                         }
                         return a.id - b.id
                     });
-                    this.scrollBottom();
+                   this.$show.scrollBottom(this);
                 }
             },
             //点击推荐
@@ -221,11 +283,16 @@
             },
             //发送消息
             selfSendMsg: function (obj) {
+                if(obj.onlySend){
+                    //只发送
+                    this.requestSend(obj);
+                    return;
+                }
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
                 //显示消息
                 this.msgList.push(obj);
-                this.scrollBottom();
+               this.$show.scrollBottom(this);
                 //发送消息
                 let reply = null;
                 if (!this.constant.staffState) {
@@ -233,37 +300,48 @@
                         class: this.MsgClass.REPLY,
                         tag: '正在输入...',
                     };
+                    this.constant.showScrollBottom = false;
                     this.msgList.push(reply);
-                    this.scrollBottom();
+                   this.$show.scrollBottom(this);
                 }
                 //请求发送
-                this.requestSend(obj, reply);
+                if(!obj.onlyShow){
+                    //非只显示
+                    this.requestSend(obj, reply);
+                }
+
             },
             //请求发送消息
             requestSend: function (obj, reply) {
-                this.$ajax.post("/web/help/tag", {tag: this.$aes.encrypt(obj.tag)}).then(res => {
+                let data = {
+                    tag: this.$aes.encrypt(obj.tag),
+                };
+                if (obj.storageType) {
+                    data['storageType'] = obj.storageType;
+                }
+                this.$ajax.post("/web/help/tag", data).then(res => {
                     res = res.data;
                     if (res.reply) {
                         res.reply = this.$aes.decrypt(res.reply);
                     }
                     if (res.state === this.constant.MsgState.DANGER) {
                         reply.tag = res.reply;
-                        this.scrollBottom();
+                       this.$show.scrollBottom(this);
                         return;
                     }
                     if (res.state === this.constant.MsgState.WAIT) {
                         reply.tag = "小六子解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
-                        this.scrollBottom();
+                       this.$show.scrollBottom(this);
                         return;
                     }
                     if (res.state === this.constant.MsgState.OK) {
                         this.showMsgHandle(reply, res);
-                        this.scrollBottom();
+                       this.$show.scrollBottom(this);
                         return;
                     }
                     if (res.state === this.constant.MsgState.STAFF) {
                         this.showStaffHandle(reply, res, obj);
-                        this.scrollBottom();
+                       this.$show.scrollBottom(this);
                         return;
                     }
                     if (res.state === this.constant.MsgState.RECOMMEND) {
@@ -277,20 +355,27 @@
                             id: +new Date()
                         };
                         this.msgList.push(recommend);
-                        this.scrollBottom();
+                       this.$show.scrollBottom(this);
                     }
                 }).catch(e => {
                     if (reply != null) {
                         //回复消息不为空
                         reply.tag = e.message;
-                        this.scrollBottom();
+                       this.$show.scrollBottom(this);
+                    }
+                    console.log(e);
+                    if(obj.storageType===this.constant.StorageType.CLOUD_IMG||obj.storageType===this.constant.StorageType.CLOUD_FILE){
+                        obj.process = this.constant.ResultCode.ERROR_SEND;
+                        return;
                     }
                     //回复消息为空时,操作本消息
                     obj.tag = "<s>" + obj.tag + "</s><span style='color:#D00;font-size: 14px'>(" + e.message + ")</span>";
                     obj.type = 'html';
+                    obj.id = -obj.id;
                 });
             },
             showMsgHandle: function (reply, res) {
+
                 if (res.storageType === this.constant.StorageType.DB || res.storageType === this.constant.StorageType.PC) {
                     reply.tag = res.reply;
                     return;
@@ -369,7 +454,6 @@
             listHelpMsg: function (page, lastId, callback) {
                 lastId = lastId && lastId > 0 ? lastId : null;
                 page = page ? page : 1;
-                this.getDbHelpMsg(page, lastId);
                 this.$ajax.post("/web/staff/online/listHelpMsg", {
                     page: page,
                     rows: this.rows,
@@ -386,76 +470,26 @@
                     this.page = res.data.page;
                     //缓存数据
                     this.$indexdb.putData(this.$db, "help_msg", data);
-                    if (page > 1) {
-                        this.scrollState = false;
-                        setTimeout(() => {
-                            this.scrollState = true;
-                        }, 2000);
-                    }
-                    this.showMsgData(data);
                     if (callback) {
                         callback("加载成功");
                     }
+                    setTimeout(() => {
+                        this.showShelterList = this.msgList.slice(0,10);
+                    }, 500);
+                    setTimeout(()=>{
+                        this.showMsgData(data);
+                    },600);
+                    setTimeout(()=>{
+                        this.showShelterList = [];
+                    },800);
                 });
-            },
-            //获取本地数据库消息
-            getDbHelpMsg(page) {
-                let userId = this.constant.userInfo.userId;
-                this.$indexdb.getDataByIndex(this.$db, "help_msg", "userId", userId).then(data => {
-                    //data排序
-                    if (page > 1) {
-                        this.scrollState = false;
-                        setTimeout(() => {
-                            this.scrollState = true;
-                        }, 1000);
-                    }
-                    data.sort((a, b) => {
-                        return b.id - a.id
-                    });
-                    let start = (page - 1) * this.rows;
-                    let end = page * this.rows;
-                    this.showMsgData(data.slice(start, end));
-                })
             },
             onRefresh(done) {
                 if (this.listMore) {
-                    //记录当前滚动条位置
-                    this.lastScrollHeight = document.getElementById("refresh-scroll").scrollHeight;
                     this.getList(done);
                 } else {
                     done("真的没有了");
-                }
-            },
-            onInfinite(done) {
-                setTimeout(() => done(), 1000);
-            },
-            //滚动到底部
-            scrollBottom: function () {
-                let el = document.getElementById("refresh-scroll");
-                if (!el) {
-                    return;
-                }
-                if (this.scrollState) {
-                    //可滚动
-                    el.scrollTop = el.scrollHeight;
-                    let count = 5;
-                    let interval = setInterval(() => {
-                        el.scrollTop = el.scrollHeight;
-                        if (--count < 0) {
-                            clearInterval(interval);
-                        }
-                    }, 10)
-                } else {
-                    //非可滚动状态,保持当前位置
-                    let count = 10;
-                    el.scrollTop = el.scrollHeight - this.lastScrollHeight;
-                    let interval = setInterval(() => {
-                        el.scrollTop = el.scrollHeight - this.lastScrollHeight;
-                        if (--count < 0) {
-                            clearInterval(interval);
-                        }
-                    }, 5)
-
+                    this.showShelterList = [];
                 }
             },
             //评星鼠标经过
@@ -466,12 +500,18 @@
                 let curr = Math.round((e.layerX - 5) / 17);
                 this.star = curr > 10 ? 10 : curr < 1 ? 0 : curr;
             },
+            //手机兼容pc选星状态控制
+            starSelectState: function (e) {
+                if((e instanceof MouseEvent) || !this.selectStar){
+                    this.selectStar = !this.selectStar;
+                }
+            },
             //评价提交
             starSubmit: function () {
                 if (this.evaluate < 0) {
                     return;
                 }
-                if (this.star < 0 || this.evaluateText === '') {
+                if (this.star < 0) {
                     return;
                 }
                 this.$ajax.post("/web/staff/online/evaluateStaff", {
@@ -482,6 +522,11 @@
                     this.evaluate = -1;
                     this.evaluateText="";
                 });
+            },
+            //滚动到底部
+            scrollToBottom:function () {
+                this.constant.showScrollBottom = false;
+                this.$show.scrollBottom(this);
             }
         },
         computed: {
@@ -493,20 +538,27 @@
             waitSend() {
                 return this.constant.waitSend;
             },
-            //body高度计算
-            bodyHeight:function(){
-                let height = window.innerHeight;
+            //高度计算
+            calcHeight:function(){
+                let height = window.innerHeight-100;
+                if(!this.hideHeader){
+                    height-=50;
+                }
                 if(this.constant.showTool){
                     height-=60;
                 }
-                if(this.hideHeader){
-                    height-=50;
-                }
                 if(this.constant.staffWaitCount>0){
-                    height-=80;
+                    height-=50;
                 }
                 return height + 'px';
             },
+            exitWaitList() {
+                return this.constant.staffWaitCount;
+            },
+            //客服信息变更
+            staffInfoUpdate(){
+                return this.constant.staffInfo;
+            }
         },
         watch: {
             login: function (val) {
@@ -517,16 +569,16 @@
                 }
             },
             msgList: function () {
-                if (this.scrollState) {
-                    this.scrollBottom();
-                }
+               this.$show.scrollBottom(this);
             },
             //待发送更新
             waitSend: function (obj) {
-                this.selfSendMsg(obj);
+                if(obj){
+                    this.selfSendMsg(obj);
+                }
             },
             //客服信息变更
-            staffInfo: function (obj) {
+            staffInfoUpdate: function (obj) {
                 let reply = {id: -new Date(), class: this.MsgClass.REPLY};
                 if (obj) {
                     reply['tag'] = '您好,客服【' + (obj.nickname ? obj.nickname : obj.username) + '】为您竭诚服务';
@@ -534,7 +586,6 @@
                     reply['tag'] = '感谢使用,服务已完成,请对本次服务进行评分';
                 }
                 this.msgList.push(reply);
-                this.scrollBottom();
             },
             evaluate: function (obj) {
                 if (obj > 0) {
@@ -547,7 +598,13 @@
                     this.evaluateText="";
                     let reply = {id: -(new Date()+2), class: this.MsgClass.EVALUATE, tag: obj};
                     this.msgList.push(reply);
-                    this.scrollBottom();
+                }
+            },
+            //退出排队
+            exitWaitList:function (val,old) {
+                if(val<1&&val<old&&!this.constant.staffState){
+                    let reply = {id: -new Date(), class: this.MsgClass.REPLY,tag:'已退出人工客服排队,现在可以使用自助服务'};
+                    this.msgList.push(reply);
                 }
             }
         }
@@ -563,6 +620,7 @@
         overflow: hidden;
         scrollbar-width: none; /* firefox */
         -ms-overflow-style: none; /* IE 10+ */
+        position: relative;
     }
 
     .body::-webkit-scrollbar {
@@ -575,6 +633,7 @@
         padding: 10px;
         word-break: break-all;
         word-wrap: break-word;
+        position: relative;
     }
 
     .msg-item > div {
@@ -587,7 +646,7 @@
 
     .msg-item.self-msg {
         text-align: right;
-        margin-left: 50px;
+        margin-left: 20%;
     }
 
     .self-msg > div {
@@ -601,7 +660,7 @@
 
     .msg-item.reply-msg, .msg-item.evaluate-msg {
         text-align: left;
-        margin-right: 50px;
+        margin-right: 20%;
     }
 
     .reply-msg > div, .evaluate-msg > div {
@@ -612,6 +671,7 @@
 
     .recommend-msg {
         text-align: left;
+        margin-right: 20%;
     }
 
     .recommend-title {
@@ -703,22 +763,6 @@
         float: right;
     }
 
-    .html-div {
-        overflow: auto;
-    }
-
-    .get-answer {
-        float: right;
-        padding: 5px;
-        cursor: pointer;
-        border: none;
-        border-radius: 5px;
-        background: rgba(120, 200, 240, 0.9);
-        color: #FFF;
-        outline: none;
-        box-shadow: none;
-        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-    }
 
     .star-body {
         height: 35px;
@@ -803,5 +847,25 @@
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
         width: 100px;
         display: inline-block;
+    }
+    .msg-item-body-shelter{
+        width: 100%;height: 100%;
+        z-index: 10;
+    }
+    .to-bottom{
+        position: absolute;
+        padding:2px 5px;
+        bottom: 5px;
+        right: 12px;
+        background-color: #FFF;
+        width: 80px;
+        height: 30px;
+        text-align: left;
+        line-height: 30px;
+        background-size: 25px 25px;
+        background-repeat: no-repeat;
+        background-position-x: 65px;
+        background-position-y: center;
+        background-image: url("../assets/img/down.svg");
     }
 </style>

@@ -2,7 +2,7 @@ import Vue from 'vue'
 import App from './App.vue'
 import {Emit} from './emit/emit.js'
 //通用js
-import {encrypt, decrypt} from './utils/common';
+import common from './utils/common';
 import axios from './utils/http';
 import store from './utils/store';
 //socket
@@ -16,12 +16,11 @@ import layer from 'vue-layer'
 import 'vue-layer/lib/vue-layer.css';
 //数据库
 import indexdb from "./utils/indexdb";
-
+Vue.use(common);
 Vue.config.productionTip = false;
 Vue.prototype.Emit = Emit;
 Vue.prototype.$store = store;
 Vue.prototype.$ajax = axios;
-Vue.prototype.$aes = {encrypt, decrypt};
 Vue.prototype.$layer = layer(Vue);
 Vue.prototype.$indexdb = indexdb;
 //开启并初始化数据库

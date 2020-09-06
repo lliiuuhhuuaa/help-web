@@ -15,19 +15,22 @@ axios.defaults.timeout = 10000;
  * config.returnError=true/false
  * //出现错误时是否忽略
  * config.ignoreError=true/false
- * //请求方式,默认application/x-www-form-urlencoded
- * config.contentType=
+ * //忽略拦截处理
+ * config.ignoreHandle=true
  */
 axios.interceptors.request.use(config => {
-    if(config.url.startsWith("http")){
+    if(config.ignoreHandle){
         return config;
     }
-    // 配置token
-    let tk = localStorage.getItem("tk");
-    if (tk) {
-        config.headers['tk'] = tk;
+    if(!config.url.startsWith("http")){
+        // 配置token
+        let tk = localStorage.getItem("tk");
+        if (tk) {
+            config.headers['tk'] = tk;
+        }
     }
-    if (!config.contentType||config.contentType.indexOf("application/x-www-form-urlencoded")) {
+    let contentType = config.headers['Content-Type'];
+    if (!contentType||contentType.indexOf("application/x-www-form-urlencoded")>-1) {
         // 配置content-Type
         config.headers['Content-Type'] = 'application/x-www-form-urlencoded';
         let ret = "";
@@ -39,8 +42,6 @@ axios.interceptors.request.use(config => {
             ret += dataKey + "=" + data[dataKey];
         }
         config.data = ret;
-    }else{
-        config.headers['Content-Type'] = config.contentType;
     }
     if(config.animation===store.state.Animation.ALL){
         store.commit("updateState", {loading: true});
@@ -66,6 +67,9 @@ axios.interceptors.response.use(response => {
         store.commit("updateState", {loading: false});
     }else if(response.config.animation===store.state.Animation.PART){
         store.commit("updateState", {loadingNoBack: false});
+    }
+    if(response.config.ignoreHandle){
+        return response;
     }
     if(response.config.url.startsWith("http")){
         return response;

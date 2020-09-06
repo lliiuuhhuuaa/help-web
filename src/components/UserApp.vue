@@ -2,7 +2,8 @@
     <div id="app">
         <UserHeader msg="message header" :hide-header="hideHeader"/>
         <UserBody ref="mb" msg="message body" :hide-header="hideHeader"></UserBody>
-        <UserFooter msg="message footer"/>
+        <!--通用footer-->
+        <Footer :staff="false"/>
         <Loading/>
     </div>
 </template>
@@ -10,7 +11,7 @@
 <script>
     import UserHeader from '@/components/UserHeader.vue'
     import UserBody from '@/components/UserBody.vue'
-    import UserFooter from '@/components/UserFooter.vue'
+    import Footer from '@/components/Footer.vue'
     import Loading from '@/components/Loading.vue'
 
     export default {
@@ -22,6 +23,7 @@
             }
         },
         created() {
+            this.constant.showFooter = true;
             //登陆认证
             this.loginConnect();
         },
@@ -32,7 +34,7 @@
             Loading,
             UserBody,
             UserHeader,
-            UserFooter
+            Footer
         },
         methods: {
             //登陆

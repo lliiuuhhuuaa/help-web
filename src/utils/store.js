@@ -12,7 +12,11 @@ const store = new Vuex.Store({
             OK: 200,//成功
             ERROR: 300, // 失败
             NO_AUTH: 400, // 未认证
-            NO_PERMISSION: 500 // 权限不足
+            NO_PERMISSION: 500, // 权限不足
+            ERROR_UPLOAD: -21, // 文件上传失败
+            ERROR_PRETREATMENT: -22, // 文件预上传失败
+            ERROR_DOWNLOAD: -3, // 文件下载失败
+            ERROR_SEND: -23, // 文件发送失败
         },
         MsgState:{
             DANGER:0, // 敏感词拦截
@@ -28,7 +32,9 @@ const store = new Vuex.Store({
             PC:4, //爬虫1
             PC2:5, //爬虫2
             RECOMMEND:6, //推荐
-            HTML:7 //html
+            HTML:7, //html
+            CLOUD_IMG:8, //云图片
+            CLOUD_FILE:9, //云文件
         },
         StaffType:{
             WAIT:1, // 等待
@@ -46,6 +52,8 @@ const store = new Vuex.Store({
         staffState:false,
         //激活用户ID
         activeUserId:-1,
+        //中止用户
+        stopUserId:[],
         //当前用户信息
         userInfo:null,
         //显示工具栏
@@ -55,7 +63,17 @@ const store = new Vuex.Store({
         //显示foot
         showFooter:false,
         //放大图片
-        zoomImgSrc:null
+        zoomImgSrc:null,
+        //系统配置
+        systemConfig:{},
+        //显示滚动到底部
+        showScrollBottom:false,
+        //最后滚动条位置
+        lastScrollHeight: 0,
+        //系统消息
+        systemMsg:null,
+        //客服信息
+        staffInfo: null,
 
     },
     mutations: {

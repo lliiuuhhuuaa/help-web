@@ -48,4 +48,7 @@
         align-items: center;/*项目在交叉轴上如何对齐*/
         align-content: center;/*定义了多根轴线的对齐方式。如果项目只有一根轴线，该属性不起作用*/
     }
+    img{
+        max-width: 100%;
+    }
 </style>

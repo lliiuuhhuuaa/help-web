@@ -3,7 +3,7 @@
          :class="{'down':(state===0),'up':(state==1),refresh:(state===2),touch:touching}"
          @touchstart="touchStart($event)"
          @touchmove="touchMove($event)"
-         @touchend="touchEnd($event)">
+         @touchend="touchEnd($event)" @scroll="scrollEvent">
         <section class="inner" :style="{ transform: 'translate3d(0, ' + top + 'px, 0)' }">
             <header class="pull-refresh">
                 <slot name="pull-refresh">
@@ -50,6 +50,8 @@
                 this.startY = e.targetTouches[0].pageY;
                 this.startScroll = this.$el.scrollTop || 0;
                 this.touching = true
+                let el = document.getElementById("refresh-scroll");
+                this.$store.state.lastScrollHeight = el.scrollHeight;
             },
             touchMove(e) {
                 if (!this.enableRefresh || this.$el.scrollTop > 0 || !this.touching) {
@@ -102,10 +104,19 @@
                     this.downText = "下拉加载聊天记录";
                 },1000)
             },
+            //滚动条滚动事件
+            scrollEvent(){
+                //标记滚动到底部
+                let el = document.getElementById("refresh-scroll");
+                this.$store.state.showScrollBottom = el.scrollHeight-el.scrollTop!=el.offsetHeight;
+            }
         }
     }
 </script>
 <style>
+    .pull-refresh{
+        z-index: 1000;
+    }
     #refresh-scroll {
         height: 100%;
         overflow: auto;

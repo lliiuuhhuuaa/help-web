@@ -2,7 +2,8 @@
     <div id="app">
         <StaffHeader msg="message header"/>
         <StaffBody ref="mb" msg="message body"></StaffBody>
-        <StaffFooter msg="message footer"/>
+        <!--通用footer-->
+        <Footer :staff="true"/>
         <Loading/>
     </div>
 </template>
@@ -10,7 +11,7 @@
 <script>
     import StaffHeader from '@/components/StaffHeader.vue'
     import StaffBody from '@/components/StaffBody.vue'
-    import StaffFooter from '@/components/StaffFooter.vue'
+    import Footer from '@/components/Footer.vue'
     import Loading from '@/components/Loading.vue'
     export default {
         name: 'App',
@@ -26,7 +27,7 @@
             Loading,
             StaffHeader,
             StaffBody,
-            StaffFooter
+            Footer
         },
         created() {
             this.constant.login = localStorage.getItem("tk")!=null;
