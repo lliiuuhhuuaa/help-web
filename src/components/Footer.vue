@@ -248,11 +248,11 @@
                 }
                 let _this = this;
                 _this.$layer.confirm('是否确认中止会话?', {icon: 3, title: '中止会话'}, function (index) {
-                    _this.$ajax.post(this.staff?"/staff/online/stopChat":"/web/staff/online/stopChat", {userId:userId}, {
+                    _this.$ajax.post(_this.staff?"/staff/online/stopChat":"/web/staff/online/stopChat", {userId:userId}, {
                         animation: _this.constant.Animation.PART,
                         alertError: true
                     }).then(() => {
-                        if(this.staff){
+                        if(_this.staff){
                             _this.constant.updatePart = {"delUserList": userId};
                         }else{
                             _this.constant.staffWaitCount = 0 ;
