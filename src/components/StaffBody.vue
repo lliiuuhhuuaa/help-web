@@ -1,5 +1,6 @@
 <template>
-    <div class="body" v-bind:class="{'show-tool':this.constant.showTool,'hide-footer':!this.constant.showFooter}">
+    <div class="body" :style="{height:calcHeight}">
+        <div class="network-delay" :class="getDelayClass">FPS</div>
         <div class="no-user-body" v-if="this.constant.activeUserId<1">
             <div class="mete-item handle"><i></i><b>处理离线问题</b></div>
             <div class="mete-item entering"><i></i><b>录入帮助词库</b></div>
@@ -51,7 +52,7 @@
                 listMore: true,
                 waitAskList: [],
                 //显示遮挡层
-                showShelterList:[],
+                showShelterList: [],
             }
         },
         created() {
@@ -60,11 +61,21 @@
                 _this.selfSendMsg({'tag': tag})
             };
             //监听消息
-            this.sockets.subscribe("chatMsg", data => {
+            this.sockets.subscribe(this.constant.SocketEvent.CHAT_MSG, data => {
                 //缓存数据
                 this.$indexdb.putData(this.$db, "help_msg", data);
+                //输入状态同步结果显示处理
+                if(this.$show.handleInputIng(this,data,true)){
+                    return;
+                }
                 this.showMsgData(data);
-                this.$show.scrollBottom(this);
+            });
+            //监听消息
+            this.sockets.subscribe(this.constant.SocketEvent.INPUT_STATE_SYNC, data => {
+                if (this.constant.activeUserId === data.userId) {
+                    //输入状态同步显示处理
+                    this.$show.handleInputIng(this,data);
+                }
             });
         },
         methods: {
@@ -74,12 +85,11 @@
             },
             //发送消息
             selfSendMsg: function (obj) {
-                if(obj.onlySend){
+                if (obj.onlySend) {
                     //只发送
                     this.requestSend(obj);
                     return;
                 }
-                console.log(obj);
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
                 //显示消息
@@ -87,7 +97,7 @@
                 this.msgList.push(obj);
                 this.$show.scrollBottom(this);
                 //请求发送
-                if(!obj.onlyShow){
+                if (!obj.onlyShow) {
                     //非只显示
                     this.requestSend(obj);
                 }
@@ -109,7 +119,7 @@
                     }
                 }).catch(e => {
                     console.log(e);
-                    if(obj.storageType===this.constant.StorageType.CLOUD_IMG||obj.storageType===this.constant.StorageType.CLOUD_FILE){
+                    if (obj.storageType === this.constant.StorageType.CLOUD_IMG || obj.storageType === this.constant.StorageType.CLOUD_FILE) {
                         obj.process = this.constant.ResultCode.ERROR_SEND;
                         return;
                     }
@@ -164,15 +174,15 @@
                             callback("加载成功");
                         }
                         setTimeout(() => {
-                            this.showShelterList = this.msgList.slice(0,10);
+                            this.showShelterList = this.msgList.slice(0, 10);
                         }, 500);
                     }
-                    setTimeout(()=>{
+                    setTimeout(() => {
                         this.showMsgData(data);
-                    },600);
-                    setTimeout(()=>{
+                    }, 600);
+                    setTimeout(() => {
                         this.showShelterList = [];
-                    },800);
+                    }, 800);
                 });
             },
             //获取本地数据库消息
@@ -200,7 +210,7 @@
                 }
                 let temp = null;
                 let msgObj = null;
-                for (let i =0; i < data.length; i++) {
+                for (let i = 0; i < data.length; i++) {
                     temp = data[i];
                     //防串数据
                     if (temp.userId !== this.constant.activeUserId) {
@@ -222,10 +232,10 @@
                         tag: temp.msg,
                         class: temp.direct !== 1 ? this.MsgClass.SELF : this.MsgClass.REPLY,
                         createDate: temp.createDate,
-                        storageType:temp.storageType,
-                        process:null,
+                        storageType: temp.storageType,
+                        process: null,
                     };
-                    if(temp.info){
+                    if (temp.info) {
                         msgObj['info'] = JSON.parse(temp.info);
                     }
                     this.msgList.splice(0, 0, msgObj);
@@ -253,7 +263,7 @@
                 });
             },
             //滚动到底部
-            scrollToBottom:function () {
+            scrollToBottom: function () {
                 this.constant.showScrollBottom = false;
                 this.$show.scrollBottom(this);
             }
@@ -267,14 +277,45 @@
             activeUser() {
                 return this.constant.activeUserId;
             },
+            //高度计算
+            calcHeight: function () {
+                let height = this.constant.windowHeight - 80;
+                if (this.constant.showTool) {
+                    height -= 60;
+                }
+                if (this.constant.showFooter) {
+                    height -= 50;
+                }
+                this.$show.scrollToBottom(this);
+                return height + 'px';
+            },
+            //获取延迟
+            getDelayClass(){
+                if(this.$store.state.socketDelay<10){
+                    return 'five';
+                }
+                if(this.$store.state.socketDelay<20){
+                    return 'four';
+                }
+                if(this.$store.state.socketDelay<40){
+                    return 'three';
+                }
+                if(this.$store.state.socketDelay<80){
+                    return 'two';
+                }
+                if(this.$store.state.socketDelay<160){
+                    return 'one';
+                }
+                return 'zero';
+            }
         },
         watch: {
             msgList: function () {
-               this.$show.scrollBottom(this);
+                this.$show.scrollBottom(this);
             },
             //待发送更新
             waitSend: function (obj) {
-                if(obj){
+                if (obj) {
                     this.selfSendMsg(obj);
                 }
             },
@@ -298,20 +339,11 @@
     .body {
         background: rgba(65, 152, 199, 0.1);
         width: 100%;
-        height: calc(100vh - 134px);
         overflow: hidden;
         scrollbar-width: none; /* firefox */
         -ms-overflow-style: none; /* IE 10+ */
         padding: 2px 0;
         position: relative;
-    }
-
-    .body.show-tool {
-        height: calc(100vh - 194px);
-    }
-
-    .body.hide-footer {
-        height: calc(100vh - 84px);
     }
 
     .body::-webkit-scrollbar {
@@ -499,13 +531,16 @@
     .mete-item.exit {
         background-image: url("../assets/img/exit.svg");
     }
-    .msg-item-body-shelter{
-        width: 100%;height: 100%;
+
+    .msg-item-body-shelter {
+        width: 100%;
+        height: 100%;
         z-index: 10;
     }
-    .to-bottom{
+
+    .to-bottom {
         position: absolute;
-        padding:2px 5px;
+        padding: 2px 5px;
         bottom: 5px;
         right: 12px;
         background-color: #FFF;
@@ -518,5 +553,42 @@
         background-position-x: 65px;
         background-position-y: center;
         background-image: url("../assets/img/down.svg");
+    }
+    .network-delay{
+        padding: 2px;
+        width: 20px;
+        height: 30px;
+        border-radius: 5px;
+        position: fixed;
+        right: 2px;
+        top:2px;
+        background-size: 20px 20px;
+        background-repeat: no-repeat;
+        background-position-x: center;;
+        background-position-y: top;
+        line-height: 50px;
+        text-align: center;
+        color: #0099CC;
+        font-size: 14px;
+        z-index: 2;
+
+    }
+    .network-delay.five{
+        background-image: url("../assets/img/signal5_blue.svg");
+    }
+    .network-delay.four{
+        background-image: url("../assets/img/signal4_blue.svg");
+    }
+    .network-delay.three{
+        background-image: url("../assets/img/signal3_blue.svg");
+    }
+    .network-delay.two{
+        background-image: url("../assets/img/signal2_blue.svg");
+    }
+    .network-delay.one{
+        background-image: url("../assets/img/signal1_blue.svg");
+    }
+    .network-delay.zero{
+        background-image: url("../assets/img/signal0.svg");
     }
 </style>

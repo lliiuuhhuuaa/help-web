@@ -1,5 +1,6 @@
 <template>
     <div class="body" :style="{height:calcHeight}">
+        <div class="network-delay" :class="getDelayClass">FPS</div>
         <div class="msg-item-body-shelter" v-if="showShelterList.length>0">
             <div class="msg-item" v-bind:class="item.class" v-for="item in showShelterList" v-bind:key="item.id">
                 <div v-if="item.class===MsgClass.RECOMMEND">
@@ -159,9 +160,9 @@
                 //评价内容
                 evaluateText: "",
                 //可选星
-                selectStar:true,
+                selectStar: true,
                 //显示遮挡层
-                showShelterList:[],
+                showShelterList: [],
             }
         },
         created() {
@@ -176,19 +177,28 @@
                 //获取当前人工客服状态
                 this.getCurrStaffState();
                 //监听消息
-                this.sockets.subscribe("chatMsg", data => {
+                this.sockets.subscribe(this.constant.SocketEvent.CHAT_MSG, data => {
                     //缓存数据
                     this.$indexdb.putData(this.$db, "help_msg", data);
+                    //输入状态同步结果显示处理
+                    if(this.$show.handleInputIng(this,data,true)){
+                        return;
+                    }
                     this.showMsgData(data, true);
                 });
                 //监听消息
                 this.$store.commit("listenUpdateData", this);
+                //监听消息
+                this.sockets.subscribe(this.constant.SocketEvent.INPUT_STATE_SYNC, data => {
+                    //输入状态同步显示处理
+                    this.$show.handleInputIng(this,data);
+                });
             },
 
             //获取当前人工客服状态
             getCurrStaffState: function () {
                 this.$ajax.post("/web/staff/online/getCurrStaffInfo", {}).then(res => {
-                    this.constant.staffState = res.data!=null;
+                    this.constant.staffState = res.data != null;
                     this.constant.staffInfo = res.data;
                 })
             },
@@ -226,7 +236,7 @@
                             tag: '正在等待分配客服,您可以先描述问题,客服分配后能及时了解问题',
                         };
                         this.msgList.push(reply);
-                       this.$show.scrollBottom(this);
+                        this.$show.scrollBottom(this);
                     }
                 });
             },
@@ -255,12 +265,12 @@
                     msgObj = {
                         id: temp.id,
                         tag: temp.msg,
-                        class: temp.direct !== 1 ? this.MsgClass.REPLY:this.MsgClass.SELF,
+                        class: temp.direct !== 1 ? this.MsgClass.REPLY : this.MsgClass.SELF,
                         createDate: temp.createDate,
-                        storageType:temp.storageType,
-                        process:null,
+                        storageType: temp.storageType,
+                        process: null,
                     };
-                    if(temp.info){
+                    if (temp.info) {
                         msgObj['info'] = JSON.parse(temp.info);
                     }
                     if (after) {
@@ -274,7 +284,7 @@
                         }
                         return a.id - b.id
                     });
-                   this.$show.scrollBottom(this);
+                    this.$show.scrollBottom(this);
                 }
             },
             //点击推荐
@@ -283,7 +293,7 @@
             },
             //发送消息
             selfSendMsg: function (obj) {
-                if(obj.onlySend){
+                if (obj.onlySend) {
                     //只发送
                     this.requestSend(obj);
                     return;
@@ -292,7 +302,7 @@
                 obj.id = new Date().getTime();
                 //显示消息
                 this.msgList.push(obj);
-               this.$show.scrollBottom(this);
+                this.$show.scrollBottom(this);
                 //发送消息
                 let reply = null;
                 if (!this.constant.staffState) {
@@ -302,10 +312,10 @@
                     };
                     this.constant.showScrollBottom = false;
                     this.msgList.push(reply);
-                   this.$show.scrollBottom(this);
+                    this.$show.scrollBottom(this);
                 }
                 //请求发送
-                if(!obj.onlyShow){
+                if (!obj.onlyShow) {
                     //非只显示
                     this.requestSend(obj, reply);
                 }
@@ -326,22 +336,22 @@
                     }
                     if (res.state === this.constant.MsgState.DANGER) {
                         reply.tag = res.reply;
-                       this.$show.scrollBottom(this);
+                        this.$show.scrollBottom(this);
                         return;
                     }
                     if (res.state === this.constant.MsgState.WAIT) {
                         reply.tag = "小六子解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
-                       this.$show.scrollBottom(this);
+                        this.$show.scrollBottom(this);
                         return;
                     }
                     if (res.state === this.constant.MsgState.OK) {
                         this.showMsgHandle(reply, res);
-                       this.$show.scrollBottom(this);
+                        this.$show.scrollBottom(this);
                         return;
                     }
                     if (res.state === this.constant.MsgState.STAFF) {
                         this.showStaffHandle(reply, res, obj);
-                       this.$show.scrollBottom(this);
+                        this.$show.scrollBottom(this);
                         return;
                     }
                     if (res.state === this.constant.MsgState.RECOMMEND) {
@@ -355,16 +365,16 @@
                             id: +new Date()
                         };
                         this.msgList.push(recommend);
-                       this.$show.scrollBottom(this);
+                        this.$show.scrollBottom(this);
                     }
                 }).catch(e => {
                     if (reply != null) {
                         //回复消息不为空
                         reply.tag = e.message;
-                       this.$show.scrollBottom(this);
+                        this.$show.scrollBottom(this);
                     }
                     console.log(e);
-                    if(obj.storageType===this.constant.StorageType.CLOUD_IMG||obj.storageType===this.constant.StorageType.CLOUD_FILE){
+                    if (obj.storageType === this.constant.StorageType.CLOUD_IMG || obj.storageType === this.constant.StorageType.CLOUD_FILE) {
                         obj.process = this.constant.ResultCode.ERROR_SEND;
                         return;
                     }
@@ -474,14 +484,14 @@
                         callback("加载成功");
                     }
                     setTimeout(() => {
-                        this.showShelterList = this.msgList.slice(0,10);
+                        this.showShelterList = this.msgList.slice(0, 10);
                     }, 500);
-                    setTimeout(()=>{
+                    setTimeout(() => {
                         this.showMsgData(data);
-                    },600);
-                    setTimeout(()=>{
+                    }, 600);
+                    setTimeout(() => {
                         this.showShelterList = [];
-                    },800);
+                    }, 800);
                 });
             },
             onRefresh(done) {
@@ -494,7 +504,7 @@
             },
             //评星鼠标经过
             starMouseOver: function (e) {
-                if (this.evaluate < 0||!this.selectStar) {
+                if (this.evaluate < 0 || !this.selectStar) {
                     return;
                 }
                 let curr = Math.round((e.layerX - 5) / 17);
@@ -502,7 +512,7 @@
             },
             //手机兼容pc选星状态控制
             starSelectState: function (e) {
-                if((e instanceof MouseEvent) || !this.selectStar){
+                if ((e instanceof MouseEvent) || !this.selectStar) {
                     this.selectStar = !this.selectStar;
                 }
             },
@@ -520,11 +530,11 @@
                     id: this.evaluate
                 }, {animation: this.$store.state.Animation.PART, alertError: true}).then(() => {
                     this.evaluate = -1;
-                    this.evaluateText="";
+                    this.evaluateText = "";
                 });
             },
             //滚动到底部
-            scrollToBottom:function () {
+            scrollToBottom: function () {
                 this.constant.showScrollBottom = false;
                 this.$show.scrollBottom(this);
             }
@@ -539,25 +549,45 @@
                 return this.constant.waitSend;
             },
             //高度计算
-            calcHeight:function(){
-                let height = window.innerHeight-100;
-                if(!this.hideHeader){
-                    height-=50;
+            calcHeight: function () {
+                let height = this.constant.windowHeight - 100;
+                if (!this.hideHeader) {
+                    height -= 50;
                 }
-                if(this.constant.showTool){
-                    height-=60;
+                if (this.constant.showTool) {
+                    height -= 60;
                 }
-                if(this.constant.staffWaitCount>0){
-                    height-=50;
+                if (this.constant.staffWaitCount > 0) {
+                    height -= 50;
                 }
+                this.$show.scrollToBottom(this);
                 return height + 'px';
             },
             exitWaitList() {
                 return this.constant.staffWaitCount;
             },
             //客服信息变更
-            staffInfoUpdate(){
+            staffInfoUpdate() {
                 return this.constant.staffInfo;
+            },
+            //获取延迟
+            getDelayClass(){
+                if(this.$store.state.socketDelay<10){
+                    return 'five';
+                }
+                if(this.$store.state.socketDelay<20){
+                    return 'four';
+                }
+                if(this.$store.state.socketDelay<40){
+                    return 'three';
+                }
+                if(this.$store.state.socketDelay<80){
+                    return 'two';
+                }
+                if(this.$store.state.socketDelay<160){
+                    return 'one';
+                }
+                return 'zero';
             }
         },
         watch: {
@@ -569,11 +599,11 @@
                 }
             },
             msgList: function () {
-               this.$show.scrollBottom(this);
+                this.$show.scrollBottom(this);
             },
             //待发送更新
             waitSend: function (obj) {
-                if(obj){
+                if (obj) {
                     this.selfSendMsg(obj);
                 }
             },
@@ -589,21 +619,22 @@
             },
             evaluate: function (obj) {
                 if (obj > 0) {
-                    for(let i=0;i<this.msgList.length;i++){
-                        if(this.msgList[i].class===this.MsgClass.EVALUATE){
-                            this.msgList.splice(i,1);break;
+                    for (let i = 0; i < this.msgList.length; i++) {
+                        if (this.msgList[i].class === this.MsgClass.EVALUATE) {
+                            this.msgList.splice(i, 1);
+                            break;
                         }
                     }
                     this.star = -1;
-                    this.evaluateText="";
-                    let reply = {id: -(new Date()+2), class: this.MsgClass.EVALUATE, tag: obj};
+                    this.evaluateText = "";
+                    let reply = {id: -(new Date() + 2), class: this.MsgClass.EVALUATE, tag: obj};
                     this.msgList.push(reply);
                 }
             },
             //退出排队
-            exitWaitList:function (val,old) {
-                if(val<1&&val<old&&!this.constant.staffState){
-                    let reply = {id: -new Date(), class: this.MsgClass.REPLY,tag:'已退出人工客服排队,现在可以使用自助服务'};
+            exitWaitList: function (val, old) {
+                if (val < 1 && val < old && !this.constant.staffState) {
+                    let reply = {id: -new Date(), class: this.MsgClass.REPLY, tag: '已退出人工客服排队,现在可以使用自助服务'};
                     this.msgList.push(reply);
                 }
             }
@@ -848,13 +879,16 @@
         width: 100px;
         display: inline-block;
     }
-    .msg-item-body-shelter{
-        width: 100%;height: 100%;
+
+    .msg-item-body-shelter {
+        width: 100%;
+        height: 100%;
         z-index: 10;
     }
-    .to-bottom{
+
+    .to-bottom {
         position: absolute;
-        padding:2px 5px;
+        padding: 2px 5px;
         bottom: 5px;
         right: 12px;
         background-color: #FFF;
@@ -867,5 +901,42 @@
         background-position-x: 65px;
         background-position-y: center;
         background-image: url("../assets/img/down.svg");
+    }
+    .network-delay{
+        padding: 2px;
+        width: 20px;
+        height: 30px;
+        border-radius: 5px;
+        position: fixed;
+        right: 2px;
+        top:2px;
+        background-size: 20px 20px;
+        background-repeat: no-repeat;
+        background-position-x: center;;
+        background-position-y: top;
+        line-height: 50px;
+        text-align: center;
+        color: #FFF;
+        font-size: 14px;
+        z-index: 2;
+
+    }
+    .network-delay.five{
+        background-image: url("../assets/img/signal5.svg");
+    }
+    .network-delay.four{
+        background-image: url("../assets/img/signal4.svg");
+    }
+    .network-delay.three{
+        background-image: url("../assets/img/signal3.svg");
+    }
+    .network-delay.two{
+        background-image: url("../assets/img/signal2.svg");
+    }
+    .network-delay.one{
+        background-image: url("../assets/img/signal1.svg");
+    }
+    .network-delay.zero{
+        background-image: url("../assets/img/signal0.svg");
     }
 </style>

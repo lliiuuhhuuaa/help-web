@@ -24,7 +24,7 @@
         },
 
         created() {
-            this.sockets.subscribe("dataUpdate", data => {
+            this.sockets.subscribe(this.constant.SocketEvent.DATA_UPDATE, data => {
                 for (let i = 0; i < data.length; i++) {
                     let temp = data[i];
                     if (temp.key.indexOf("constant.") > -1) {

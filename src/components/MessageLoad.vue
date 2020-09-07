@@ -108,7 +108,7 @@
             scrollEvent(){
                 //标记滚动到底部
                 let el = document.getElementById("refresh-scroll");
-                this.$store.state.showScrollBottom = el.scrollHeight-el.scrollTop!=el.offsetHeight;
+                this.$store.state.showScrollBottom = el.scrollHeight-el.scrollTop-20>el.offsetHeight;
             }
         }
     }

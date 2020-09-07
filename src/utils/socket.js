@@ -51,7 +51,7 @@ export default function socket(vue,state) {
 function testSpeed() {
     let start = +new Date();
     _this.$socket.emit("network_speed_test",null,()=>{
-        console.log(+new Date()-start);
+        _this.$store.state.socketDelay = +new Date()-start;
         setTimeout(()=>{
             testSpeed();
         },5000);

@@ -44,6 +44,12 @@ const store = new Vuex.Store({
             ALL:1,
             PART:2
         },
+        SocketEvent:{
+            DATA_UPDATE:"dataUpdate", // 数据更新
+            CHAT_MSG:"chatMsg", // 聊天消息
+            INPUT_STATE_SYNC:"input_state_sync", // 输入状态同步
+            NETWORK_SPEED_TEST:"network_speed_test", // 测速监听
+        },
         //待发送消息
         waitSend:{},
         //等待人数
@@ -74,6 +80,10 @@ const store = new Vuex.Store({
         systemMsg:null,
         //客服信息
         staffInfo: null,
+        //窗口高度
+        windowHeight:window.innerHeight,
+        //socket延迟
+        socketDelay:null,
 
     },
     mutations: {
@@ -87,7 +97,7 @@ const store = new Vuex.Store({
         },
         //监听数据更新
         listenUpdateData:function (obj,_this) {
-            _this.sockets.subscribe("dataUpdate", data => {
+            _this.sockets.subscribe(_this.constant.SocketEvent.DATA_UPDATE, data => {
                 for(let i=0;i<data.length;i++){
                     let temp = data[i];
                     if(temp.key.indexOf("constant.")>-1){

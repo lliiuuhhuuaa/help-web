@@ -54,6 +54,20 @@
             }
         },
         created() {
+            let _this = this;
+            window.onunload=function(){
+                //处理输入同步，页面将被刷新或被关闭的情况
+                let userId = null;
+                if(_this.staff){
+                    userId = _this.constant.activeUserId;
+                }else if(_this.constant.staffInfo!=null){
+                    userId = _this.constant.staffInfo.userId;
+                }
+                if(userId){
+                    _this.$socket.emit(_this.constant.SocketEvent.INPUT_STATE_SYNC,{userId:userId,state:false})
+                }
+            }
+
         },
         methods: {
             //高度计算
@@ -198,6 +212,15 @@
                 this.prevSendTime = time;
                 //发送
                 this.$store.commit("updateState", {waitSend: {tag: this.content}});
+                let userId = null;
+                if(this.staff){
+                    userId = this.constant.activeUserId;
+                }else if(this.constant.staffInfo!=null){
+                    userId = this.constant.staffInfo.userId;
+                }
+                if(userId){
+                    this.$socket.emit(this.constant.SocketEvent.INPUT_STATE_SYNC,{userId:userId,state:true,text:this.content})
+                }
                 this.content = "";
             },
             sendQuickMsg: function (item) {
@@ -261,7 +284,6 @@
                     });
                     _this.$layer.close(index);
                 });
-
             },
         },
         computed: {
@@ -282,6 +304,16 @@
             //输入框内容变更
             content: function (val) {
                 this.send = val.trim() !== '';
+                let userId = null;
+                if(this.staff){
+                    userId = this.constant.activeUserId;
+                }else if(this.constant.staffInfo!=null){
+                    userId = this.constant.staffInfo.userId;
+                }
+                if(!userId){
+                    return;
+                }
+                this.$socket.emit(this.constant.SocketEvent.INPUT_STATE_SYNC,{userId:userId,state:this.send})
             },
             //登陆后
             login: function (val) {

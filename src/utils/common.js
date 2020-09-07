@@ -80,6 +80,69 @@ let install = function (Vue) {
                     }, 10)
 
                 }
+            },
+            //滚动到底部
+            scrollToBottom: function (_this) {
+                let el = document.getElementById("refresh-scroll");
+                if (!el) {
+                    return;
+                }
+                if (!_this.$store.state.showScrollBottom) {
+                    //可滚动
+                    el.scrollTop = el.scrollHeight;
+                    let count = 5;
+                    let interval = setInterval(() => {
+                        el.scrollTop = el.scrollHeight;
+                        if (--count < 0) {
+                            clearInterval(interval);
+                        }
+                    }, 10)
+                }
+            },
+            //输入状态同步显示处理
+            handleInputIng: function (_this,data,result) {
+                let temp = null;
+                if(result){
+                    for (let i = _this.msgList.length - 1; i >= _this.msgList.length - 10 && i >= 0; i--) {
+                        temp = _this.msgList[i];
+                        if (temp.id === 9999999999998) {
+                            temp.id = data.id;
+                            temp.tag = data.msg;
+                            temp.createDate = data.createDate;
+                            _this.$show.scrollBottom(_this);
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                let id = 9999999999999;
+                if (data.state) {
+                    for (let i = _this.msgList.length - 1; i >= _this.msgList.length - 10 && i >= 0; i--) {
+                        temp = _this.msgList[i];
+                        if (temp.id === id) {
+                            if (data.text) {
+                                temp.tag = data.text;
+                                temp.id--;
+                            }
+                            return;
+                        }
+                    }
+                    let reply = {
+                        id: id,
+                        class: _this.MsgClass.REPLY,
+                        tag: '对方正在输入...',
+                        createDate:+new Date(),
+                    };
+                    _this.msgList.push(reply);
+                    _this.$show.scrollBottom(_this);
+                } else {
+                    for (let i = _this.msgList.length - 1; i >= _this.msgList.length - 10 && i >= 0; i--) {
+                        if (_this.msgList[i].id === id) {
+                            _this.msgList.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
             }
         }
     }

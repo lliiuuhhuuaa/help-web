@@ -12,6 +12,12 @@
         components: {
             ZoomImg,
         },
+        created() {
+            let _this = this;
+            window.onresize = function () {
+                _this.$store.state.windowHeight = window.innerHeight;
+            }
+        },
         computed: {
             //登陆状态更新
             login() {
