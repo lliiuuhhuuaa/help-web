@@ -5,7 +5,7 @@
             <li class="no-user" v-if="userList.length<1&&waitCount<0">当前没有用户需要帮助</li>
             <li class="user-item" v-for="item in userList" v-bind:key="item.userId"
                 @click="constant.activeUserId===item.userId?constant.activeUserId=0:constant.activeUserId=item.userId"
-                v-bind:class="{'active':constant.activeUserId===item.userId}">{{item.nickname}}
+                v-bind:class="{'active':constant.activeUserId===item.userId}">{{item.nickname}}<span class="un-read" v-if="constant.msgUnRead[item.userId]">{{constant.msgUnRead[item.userId]}}</span>
             </li>
             <li class="user-item add-user" @click="getWaitUser" v-if="waitCount>0">✚</li>
         </ul>
@@ -83,8 +83,18 @@
             updatePart() {
                 return this.constant.updatePart;
             },
+            //激活用户变更
+            activeUser() {
+                return this.constant.activeUserId;
+            },
         },
         watch: {
+            //激活用户变更
+            activeUser(val){
+                if(val>0){
+                    delete this.constant.msgUnRead[val];
+                }
+            },
             //局部变动
             updatePart: function (obj) {
                 for (let key in obj) {
@@ -165,10 +175,11 @@
         width: auto;
         color: #EEE;
         background: rgba(65, 152, 199, 0.5);
-        padding: 10px;
+        padding: 10px 20px;
         border-radius: 10px;
         margin-right: 2px;
         display: inline-block;
+        position: relative;
 
     }
 
@@ -188,5 +199,17 @@
         width: 100%;
         text-align: center;
         color: rgb(65, 152, 199);
+    }
+    .user-item .un-read{
+        color: #FFF;
+        padding:0;
+        font-size: 16px;
+        background: rgba(255,0,0,0.8);
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        position: absolute;
+        right: 1px;
+        top:1px;
     }
 </style>

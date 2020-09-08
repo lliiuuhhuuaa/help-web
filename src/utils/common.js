@@ -52,8 +52,12 @@ let install = function (Vue) {
         };
         //显示操作全局方法
         Vue.prototype.$show = {
-            //滚动到底部
-            scrollBottom: function (_this) {
+            /**
+             * 内容滚动
+             * @param _this
+             * @param forceScroll  如果当前为锁定状态，是否强制滚动
+             */
+            scrollBottom: function (_this,forceScroll) {
                 let el = document.getElementById("refresh-scroll");
                 if (!el) {
                     return;
@@ -69,6 +73,9 @@ let install = function (Vue) {
                         }
                     }, 10)
                 } else {
+                    if(!forceScroll){
+                        return;
+                    }
                     //非可滚动状态,保持当前位置
                     let count = 2;
                     let interval = setInterval(() => {
@@ -134,7 +141,6 @@ let install = function (Vue) {
                         createDate:+new Date(),
                     };
                     _this.msgList.push(reply);
-                    _this.$show.scrollBottom(_this);
                 } else {
                     for (let i = _this.msgList.length - 1; i >= _this.msgList.length - 10 && i >= 0; i--) {
                         if (_this.msgList[i].id === id) {

@@ -4,7 +4,7 @@ Vue.use(Vuex);
 const store = new Vuex.Store({
     state: {
         serviceUrl:"/help/api",
-        loading: false,
+        loading: true,
         loadingNoBack: false,
         login:false,
         commons:[],
@@ -84,7 +84,10 @@ const store = new Vuex.Store({
         windowHeight:window.innerHeight,
         //socket延迟
         socketDelay:null,
-
+        //未读标记
+        msgUnRead:{},
+        //激活状态未读标记
+        activeMsgUnRead:0,
     },
     mutations: {
         updateState(obj,param){

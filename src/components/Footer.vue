@@ -10,24 +10,32 @@
         <div class="stop-notice" v-if="this.constant.stopUserId.indexOf(this.constant.activeUserId)>-1"><span>用户已中止会话</span><button @click="stopChat(true)">关闭会话</button></div>
         <div v-else>
             <div class="input-body">
-                <input autocomplete="off" class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg"
-                       placeholder="可以点这里输入问题"/>
+                <button class="emoji-button" v-on:click="showEmoji=!showEmoji,constant.showTool = showEmoji"/>
+<!--                <div spellcheck="true" class="input-text" name="text" v-on:keydown.enter.prevent="sendMsg"-->
+<!--                     placeholder="可以点这里输入问题" contenteditable="true" v-html="content"></div>-->
+                <input spellcheck="true" class="input-text" name="text" v-on:keydown.enter.prevent="sendMsg"
+                     placeholder="可以点这里输入问题" contenteditable="true" v-model="content"/>
                 <button class="send-button" v-bind:class="{'active':send}" v-on:click="send?sendMsg():toggleTool()"/>
             </div>
             <div class="tool-bar" v-if="this.constant.showTool">
-                <div class="tool-item stop" @click="stopChat" v-if="staff||this.constant.staffState">终止会话</div>
-                <div class="tool-item img" @click="selectFile" v-if="staff||this.constant.staffState">发送图片<input ref="file"
-                                                                                                                 type="file"
-                                                                                                                 class="hide"
-                                                                                                                 accept="image/*"
-                                                                                                                 @change="imgDone"/>
-                </div>
-                <div class="tool-item file" @click="selectFile" v-if="staff||this.constant.staffState">发送文件<input ref="file"
-                                                                                                                  type="file"
-                                                                                                                  class="hide"
-                                                                                                                  @change="fileDone"/>
-                </div>
-                <div class="tool-item staff" @click="sendQuickMsg('人工客服')" v-if="!staff&&!this.constant.staffState">人工客服
+                <ul class="emoji-body" v-if="showEmoji">
+                    <li class="emoji-item" v-for="index of 20" :key="index"><img :src="getEmojiUrl(index)"/></li>
+                </ul>
+                <div v-else>
+                    <div class="tool-item stop" @click="stopChat" v-if="staff||this.constant.staffState">终止会话</div>
+                    <div class="tool-item img" @click="selectFile" v-if="staff||this.constant.staffState">发送图片<input ref="file"
+                                                                                                                     type="file"
+                                                                                                                     class="hide"
+                                                                                                                     accept="image/*"
+                                                                                                                     @change="imgDone"/>
+                    </div>
+                    <div class="tool-item file" @click="selectFile" v-if="staff||this.constant.staffState">发送文件<input ref="file"
+                                                                                                                      type="file"
+                                                                                                                      class="hide"
+                                                                                                                      @change="fileDone"/>
+                    </div>
+                    <div class="tool-item staff" @click="sendQuickMsg('人工客服')" v-if="!staff&&!this.constant.staffState">人工客服
+                    </div>
                 </div>
             </div>
         </div>
@@ -51,6 +59,10 @@
                 prevSendTime: 0,
                 constant: this.$store.state,
                 timeOut: null,
+                //上一次输入状态同步
+                prevInputState: false,
+                //显示表情栏
+                showEmoji:false,
             }
         },
         created() {
@@ -86,6 +98,11 @@
             },
             //显示工具栏
             toggleTool: function () {
+                //已显示工具栏并且显示表情
+                if(this.constant.showTool&&this.showEmoji){
+                    this.showEmoji = false;
+                    return;
+                }
                 this.constant.showTool = !this.constant.showTool;
             },
             //选择图片
@@ -285,6 +302,10 @@
                     _this.$layer.close(index);
                 });
             },
+            //获取表情包地址
+            getEmojiUrl:function(index){
+                return '/images/qq/'+index+'.jpeg';
+            }
         },
         computed: {
             //登陆状态更新
@@ -313,7 +334,11 @@
                 if(!userId){
                     return;
                 }
-                this.$socket.emit(this.constant.SocketEvent.INPUT_STATE_SYNC,{userId:userId,state:this.send})
+                //与上次发送状态不同
+                if(this.send!==this.prevInputState){
+                    this.prevInputState = this.send;
+                    this.$socket.emit(this.constant.SocketEvent.INPUT_STATE_SYNC,{userId:userId,state:this.send})
+                }
             },
             //登陆后
             login: function (val) {
@@ -348,35 +373,52 @@
 
     .common-word {
         text-align: left;
-        padding: 15px 10px;
-        height: 20px;
+        padding: 0;
+        height: 50px;
         margin: 0;
+        list-style: none;
+        white-space: nowrap;
+        display: flex;
+        overflow-y: hidden;
+        overflow-x: auto;
     }
 
     .common-word li {
-        display: inline;
         border: 1px solid #0099CC;
-        list-style: none;
         margin: 5px;
         padding: 5px;
         border-radius: 5px;
+        height: 20px;
         cursor: pointer;
+        width: auto;
+        display: inline-block;
+        position: relative;
+
     }
 
     .input-text {
+        text-align: left;
+        line-height: 30px;
         float: left;
         height: 30px;
-        width: calc(100% - 60px);
+        width: calc(100% - 100px);
         border: 0;
         outline: none;
         font-size: 16px;
         background: #FFF;
         background: rgba(65, 152, 199, 0);
     }
-
+    .input-text:empty:before{
+        content: attr(placeholder);   /* element attribute*/
+        color: #bbb;
+    }
+    /*焦点时内容为空*/
+    .input-text:focus:before{
+        content:none;
+    }
     .input-body {
         height: 30px;
-        padding: 10px 0 10px 20px;
+        padding: 10px 0;
         background: #FFF;
     }
 
@@ -487,5 +529,35 @@
         box-shadow: none;
         font-weight: bold;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+    .emoji-button{
+        float: left;
+        width: 50px;
+        height: 30px;
+        border: none;
+        background: url("../assets/img/emoji.svg") no-repeat center;
+        background-size: 100% 100%;
+        outline: none;
+    }
+    .emoji-body{
+        text-align: left;
+        margin: 0;
+        list-style: none;
+        white-space: nowrap;
+        overflow-y: hidden;
+        overflow-x: auto;
+        padding: 5px;
+        background: rgba(255,255,255,0.8);
+    }
+    .emoji-body .emoji-item{
+        border-radius: 5px;
+        margin-right: 5px;
+        height: 50px;
+        cursor: pointer;
+        width: 50px;
+        display: inline-block;
+        background-size: 20px 20px;
+        background-repeat: no-repeat;
+        background-position-x: center;
     }
 </style>

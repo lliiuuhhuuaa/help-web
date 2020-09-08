@@ -1,6 +1,6 @@
 <template>
     <div class="body" :style="{height:calcHeight}">
-        <div class="network-delay" :class="getDelayClass">FPS</div>
+        <div class="network-delay" :class="getDelayClass" v-if="this.constant.socketDelay!=null">FPS</div>
         <div class="no-user-body" v-if="this.constant.activeUserId<1">
             <div class="mete-item handle"><i></i><b>处理离线问题</b></div>
             <div class="mete-item entering"><i></i><b>录入帮助词库</b></div>
@@ -17,7 +17,7 @@
                 <ChatMsg :item="item"/>
             </div>
         </MessageLoad>
-        <div class="to-bottom point" v-if="constant.showScrollBottom" @click="scrollToBottom">回到底部</div>
+        <div class="to-bottom point" v-if="constant.showScrollBottom" @click="scrollToBottom"><span v-if="constant.activeMsgUnRead">{{constant.activeMsgUnRead}}条新消息</span>回到底部</div>
     </div>
 
 </template>
@@ -64,6 +64,16 @@
             this.sockets.subscribe(this.constant.SocketEvent.CHAT_MSG, data => {
                 //缓存数据
                 this.$indexdb.putData(this.$db, "help_msg", data);
+                if(this.constant.activeUserId!==data.userId){
+                    this.constant.msgUnRead[data.userId] = this.constant.msgUnRead[data.userId]?this.constant.msgUnRead[data.userId]+1:1;
+                    if(this.constant.msgUnRead[data.userId]>99){
+                        this.constant.msgUnRead[data.userId] = 99;
+                    }
+                    //复制对象,不然视图不会更新
+                    this.constant.msgUnRead = Object.assign({},this.constant.msgUnRead);
+                }else{
+                    this.constant.activeMsgUnRead =  this.constant.showScrollBottom?this.constant.activeMsgUnRead+1:0;
+                }
                 //输入状态同步结果显示处理
                 if(this.$show.handleInputIng(this,data,true)){
                     return;
@@ -94,6 +104,8 @@
                 obj.id = new Date().getTime();
                 //显示消息
                 this.constant.showScrollBottom = false;
+                //强制更新
+                obj['forceScroll'] = true;
                 this.msgList.push(obj);
                 this.$show.scrollBottom(this);
                 //请求发送
@@ -178,7 +190,7 @@
                         }, 500);
                     }
                     setTimeout(() => {
-                        this.showMsgData(data);
+                        this.showMsgData(data,true);
                     }, 600);
                     setTimeout(() => {
                         this.showShelterList = [];
@@ -198,10 +210,10 @@
                     let start = (page - 1) * this.rows;
                     let end = page * this.rows;
                     data = data.slice(start, end);
-                    this.showMsgData(data);
+                    this.showMsgData(data,true);
                 })
             },
-            showMsgData(data) {
+            showMsgData(data,forceScroll) {
                 if (!data) {
                     return;
                 }
@@ -235,6 +247,10 @@
                         storageType: temp.storageType,
                         process: null,
                     };
+                    if(forceScroll){
+                        //强制滚动
+                        msgObj['forceScroll'] = true;
+                    }
                     if (temp.info) {
                         msgObj['info'] = JSON.parse(temp.info);
                     }
@@ -291,6 +307,9 @@
             },
             //获取延迟
             getDelayClass(){
+                if(this.$store.state.socketDelay<0){
+                    return 'zero';
+                }
                 if(this.$store.state.socketDelay<10){
                     return 'five';
                 }
@@ -303,15 +322,18 @@
                 if(this.$store.state.socketDelay<80){
                     return 'two';
                 }
-                if(this.$store.state.socketDelay<160){
-                    return 'one';
-                }
-                return 'zero';
+                return 'one';
+            },
+            //显示回到底部状态变更
+            scrollBottomUpdate(){
+                return this.constant.showScrollBottom;
             }
         },
         watch: {
-            msgList: function () {
-                this.$show.scrollBottom(this);
+            msgList: function (val) {
+                if(val&&val.le>0){
+                    this.$show.scrollBottom(this);
+                }
             },
             //待发送更新
             waitSend: function (obj) {
@@ -325,11 +347,19 @@
                 this.listMore = true;
                 this.constant.showTool = false;
                 this.constant.showScrollBottom = false;
+                this.constant.activeMsgUnRead = 0;
                 this.constant.showFooter = id > 0;
                 if (id > 0) {
                     this.listHelpMsg(1, id);
                 }
             },
+            //显示回到底部状态变更
+            scrollBottomUpdate:function (val) {
+                if(!val){
+                    //未读消息清0
+                    this.constant.activeMsgUnRead = 0;
+                }
+            }
         }
     }
 </script>
@@ -391,100 +421,6 @@
         word-wrap: break-word;
         border-radius: 18px 18px 18px 0;
     }
-
-    .recommend-msg {
-        text-align: left;
-    }
-
-    .recommend-title {
-        color: #999;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #EEE;
-    }
-
-    .recommend-item {
-        color: dodgerblue;
-        cursor: pointer;
-        margin-top: 10px;
-        font-size: 14px;
-    }
-
-    .advertising-msg > div {
-        background: rgba(0, 0, 0, 0);
-        text-align: left;
-        word-break: break-all;
-        word-wrap: break-word;
-        border-radius: 18px 18px 0 18px;
-        padding: 0;
-    }
-
-    .advertising-body {
-        border-radius: 18px 18px 18px 18px;
-        background: #FFFFFF;
-        padding: 10px;
-    }
-
-    .advertising-title {
-        border-bottom: 1px solid #EEE;
-        padding-bottom: 10px;
-    }
-
-    .advertising-title > div {
-        font-family: 微软雅黑;
-        margin-right: 10px;
-        display: inline;
-        font-weight: bold;
-        font-size: 15px;
-        padding-bottom: 10px;
-        cursor: pointer;
-    }
-
-    .advertising-title > div.active {
-        color: #0099CC;
-        border-bottom: 2px solid #0099CC;
-    }
-
-    .advertising-list > div {
-        cursor: pointer;
-        border-bottom: 2px dotted #EEE;
-        padding: 5px;
-        font-size: 14px;
-    }
-
-    .advertising-img {
-        width: 100%;
-        height: 50px;
-        text-align: center;
-        background: #FFF;
-        margin-bottom: 20px;
-    }
-
-    .advertising-img > img {
-        height: 100%;
-    }
-
-    .advertising-list-left {
-        float: left;
-        width: 50px;
-        text-align: center;
-    }
-
-    .advertising-list-left > div {
-        font-family: "隶书";
-        padding: 10px;
-        font-size: 25px;
-        width: 20px;
-        line-height: 30px;
-        text-align: center;
-        text-shadow: 0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa, 0 6px 1px rgba(0, 0, 0, 0.1), 0 0 5px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.3), 0 3px 5px rgba(0, 0, 0, 0.2), 0 5px 10px rgba(0, 0, 0, 0.25);
-    }
-
-    .advertising-list-right {
-        width: calc(100% - 50px);
-        height: 100%;
-        float: right;
-    }
-
     .no-user-body {
         text-align: center;
     }
@@ -540,19 +476,24 @@
 
     .to-bottom {
         position: absolute;
-        padding: 2px 5px;
+        padding: 2px 20px 2px 5px;
         bottom: 5px;
         right: 12px;
         background-color: #FFF;
-        width: 80px;
         height: 30px;
         text-align: left;
         line-height: 30px;
         background-size: 25px 25px;
         background-repeat: no-repeat;
-        background-position-x: 65px;
+        background-position-x: right;
         background-position-y: center;
         background-image: url("../assets/img/down.svg");
+        width: auto;
+        display: inline-block;
+    }
+    .to-bottom span{
+        font-size: 14px;
+        color: #0099CC;
     }
     .network-delay{
         padding: 2px;

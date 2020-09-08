@@ -129,6 +129,8 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
     .chat-msg {
+        width: auto;
+        display: inline-block;
         border-radius: 18px 18px 18px 18px;
         font-size: 16px;
         padding: 16px;

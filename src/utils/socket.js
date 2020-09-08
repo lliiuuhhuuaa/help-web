@@ -13,6 +13,7 @@ export default function socket(vue,state) {
     sockets.unsubscribe("connect");
     sockets.subscribe("connect", data => {
         console.log('连接成功:' + data);
+        _this.$store.state.loading = false;
     });
     sockets.unsubscribe("connecting");
     sockets.subscribe("connecting", data => {
@@ -50,7 +51,11 @@ export default function socket(vue,state) {
 }
 function testSpeed() {
     let start = +new Date();
+    let timer = setTimeout(()=>{
+        _this.$store.state.socketDelay = -1;
+    },30000);
     _this.$socket.emit("network_speed_test",null,()=>{
+        clearTimeout(timer);
         _this.$store.state.socketDelay = +new Date()-start;
         setTimeout(()=>{
             testSpeed();

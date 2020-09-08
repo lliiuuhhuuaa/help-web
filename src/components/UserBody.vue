@@ -1,6 +1,6 @@
 <template>
     <div class="body" :style="{height:calcHeight}">
-        <div class="network-delay" :class="getDelayClass">FPS</div>
+        <div class="network-delay" :class="getDelayClass" v-if="this.constant.socketDelay!=null">FPS</div>
         <div class="msg-item-body-shelter" v-if="showShelterList.length>0">
             <div class="msg-item" v-bind:class="item.class" v-for="item in showShelterList" v-bind:key="item.id">
                 <div v-if="item.class===MsgClass.RECOMMEND">
@@ -240,7 +240,7 @@
                     }
                 });
             },
-            showMsgData(data, after) {
+            showMsgData(data, after,forceScroll) {
                 if (!data) {
                     return;
                 }
@@ -273,6 +273,10 @@
                     if (temp.info) {
                         msgObj['info'] = JSON.parse(temp.info);
                     }
+                    if(forceScroll){
+                        //强制滚动
+                        msgObj['forceScroll'] = true;
+                    }
                     if (after) {
                         this.msgList.push(msgObj);
                     } else {
@@ -300,6 +304,8 @@
                 }
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
+                //强制更新
+                obj['forceScroll'] = true;
                 //显示消息
                 this.msgList.push(obj);
                 this.$show.scrollBottom(this);
@@ -487,7 +493,7 @@
                         this.showShelterList = this.msgList.slice(0, 10);
                     }, 500);
                     setTimeout(() => {
-                        this.showMsgData(data);
+                        this.showMsgData(data,null,true);
                     }, 600);
                     setTimeout(() => {
                         this.showShelterList = [];
@@ -572,6 +578,9 @@
             },
             //获取延迟
             getDelayClass(){
+                if(this.$store.state.socketDelay<0){
+                    return 'zero';
+                }
                 if(this.$store.state.socketDelay<10){
                     return 'five';
                 }
@@ -584,10 +593,7 @@
                 if(this.$store.state.socketDelay<80){
                     return 'two';
                 }
-                if(this.$store.state.socketDelay<160){
-                    return 'one';
-                }
-                return 'zero';
+                return 'one';
             }
         },
         watch: {
