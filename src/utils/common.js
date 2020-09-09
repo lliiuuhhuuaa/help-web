@@ -155,16 +155,22 @@ let install = function (Vue) {
                     }
                 }
             },
-            horizontalScrolling:function (e) {
+            //PC水平鼠标拖动
+            horizontalScrolling:function (e,diff) {
                 let _this = null;
-                for(let i=0;i<e.path.length;i++){
-                    //查找父级
-                    if(e.path[i].className){
-                        if(e.path[i].className.indexOf("horizontal-scrolling")>-1){
-                            _this = e.path[i];
+                _this = e.currentTarget;
+                //向上找5级
+                for(let i=0;i<5;i++){
+                    if(_this!=null){
+                        if(_this.className){
+                            if(_this.className.indexOf("horizontal-scrolling")>-1){
+                                break;
+                            }
                         }
                     }
+                    _this = _this.parentNode;
                 }
+                diff = diff?diff:0;
                 if(_this==null){
                     return true;
                 }
@@ -172,10 +178,13 @@ let install = function (Vue) {
                 document.onmousemove = mouseMove;
                 document.onmouseleave = mouseUp;
                 document.onmouseup = mouseUp;
-                // 鼠标按下
-                function mouseMove(e){
-                    _this.scrollLeft =startX-e.layerX;
-
+                // 鼠标移动
+                function mouseMove(event){
+                    //diff是为了滑动错开一个元素，这样就不会误点击
+                    let mx = e.layerX-event.layerX;
+                    if(Math.abs(mx)>=diff){
+                        _this.scrollLeft =startX-event.layerX+(mx<0?diff:-diff);
+                    }
                 }
                 //鼠标弹起
                 function mouseUp(){

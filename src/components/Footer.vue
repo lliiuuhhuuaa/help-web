@@ -11,15 +11,13 @@
         <div v-else>
             <div class="input-body">
                 <button class="emoji-button" v-on:click="showEmoji=!showEmoji,constant.showTool = showEmoji"/>
-<!--                <div spellcheck="true" class="input-text" name="text" v-on:keydown.enter.prevent="sendMsg"-->
-<!--                     placeholder="可以点这里输入问题" contenteditable="true" v-html="content"></div>-->
                 <input autocomplete="off" class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg"
                        placeholder="可以点这里输入问题"/>
                 <button class="send-button" v-bind:class="{'active':send}" v-on:click="send?sendMsg():toggleTool()"/>
             </div>
             <div class="tool-bar" v-if="this.constant.showTool">
-                <ul class="emoji-body horizontal-scrolling" v-if="showEmoji" @mousedown.self="$show.horizontalScrolling">
-                    <li class="emoji-item" v-for="index of 20" :key="index"><img :src="getEmojiUrl(index)" @click="sendEmojiMsg(index)" @mousedown.prevent="$show.horizontalScrolling"/></li>
+                <ul class="emoji-body horizontal-scrolling" v-if="showEmoji" @mousedown.self="$show.horizontalScrolling($event,50)">
+                    <li class="emoji-item" v-for="index of 20" :key="index"><img :src="getEmojiUrl(index)" @click="sendEmojiMsg(index)" @mousedown.prevent="$show.horizontalScrolling($event,50)"/></li>
                 </ul>
                 <div v-else>
                     <div class="tool-item stop" @click="stopChat" v-if="staff||this.constant.staffState">终止会话</div>
@@ -78,10 +76,6 @@
                 if(userId){
                     _this.$socket.emit(_this.constant.SocketEvent.INPUT_STATE_SYNC,{userId:userId,state:false})
                 }
-            }
-            window.onload = function () {
-                //水平滚动初始化
-             //   _this.$show.horizontalScrolling();
             }
 
 
@@ -578,8 +572,5 @@
         cursor: pointer;
         width: 50px;
         display: inline-block;
-        background-size: 20px 20px;
-        background-repeat: no-repeat;
-        background-position-x: center;
     }
 </style>

@@ -1,11 +1,11 @@
 <template>
     <div class="head">
         <div class="staff-state">当前服务人数 <span>{{userList.length}}</span> 位 , 排队中人数 <span>{{waitCount}}</span> 位</div>
-        <ul id="head-scroll" class="user-item-body">
+        <ul class="user-item-body horizontal-scrolling" @mousedown.self="$show.horizontalScrolling($event,110)">
             <li class="no-user" v-if="userList.length<1&&waitCount<0">当前没有用户需要帮助</li>
-            <li class="user-item" v-for="item in userList" v-bind:key="item.userId"
+            <li class="user-item" v-for="item in userList" :key="item.userId"
                 @click="constant.activeUserId===item.userId?constant.activeUserId=0:constant.activeUserId=item.userId"
-                v-bind:class="{'active':constant.activeUserId===item.userId}">{{item.nickname}}<span class="un-read" v-if="constant.msgUnRead[item.userId]">{{constant.msgUnRead[item.userId]}}</span>
+                v-bind:class="{'active':constant.activeUserId===item.userId}" @mousedown.prevent="$show.horizontalScrolling($event,110)"><div @mousedown.prevent="$show.horizontalScrolling($event,110)">{{item.nickname}}</div><div class="sup"><span class="un-read" v-if="constant.msgUnRead[item.userId]">{{constant.msgUnRead[item.userId]}}  </span></div>
             </li>
             <li class="user-item add-user" @click="getWaitUser" v-if="waitCount>0">✚</li>
         </ul>
@@ -65,18 +65,6 @@
                     this.constant.activeUserId = data.data.userId;
                 })
             },
-            //滚动到底部
-            scrollBottom: function () {
-                let el = document.getElementById("head-scroll");
-                el.scrollLeft = el.scrollWidth;
-                let count = 10;
-                let interval = setInterval(() => {
-                    el.scrollLeft = el.scrollWidth;
-                    if (--count < 0) {
-                        clearInterval(interval);
-                    }
-                }, 10)
-            }
         },
         computed: {
             //局部变动监听
@@ -160,15 +148,21 @@
 
     .user-item-body {
         height: 40px;
-        padding: 0;
+        text-align: left;
         margin: 0;
+        padding:0;
         list-style: none;
         white-space: nowrap;
-        display: flex;
         overflow-y: hidden;
         overflow-x: auto;
+        -webkit-user-select:none;
+        -moz-user-select:none;
+        -o-user-select:none;
+        user-select:none;
     }
-
+    .user-item-body::-webkit-scrollbar{
+        display: none;
+    }
     .user-item-body .user-item {
         height: 20px;
         cursor: pointer;
@@ -179,10 +173,13 @@
         border-radius: 10px;
         margin-right: 2px;
         display: inline-block;
-        position: relative;
-
     }
-
+    .user-item>div{
+        display: inline;
+    }
+    .user-item .sup{
+        position: relative;
+    }
     .user-item.active {
         background: rgb(65, 152, 199);
         border-radius: 10px 10px 0 0;
@@ -201,6 +198,7 @@
         color: rgb(65, 152, 199);
     }
     .user-item .un-read{
+        text-align: center;
         color: #FFF;
         padding:0;
         font-size: 16px;
@@ -209,7 +207,7 @@
         height: 20px;
         border-radius: 50%;
         position: absolute;
-        right: 1px;
-        top:1px;
+        right: -20px;
+        top:-10px;
     }
 </style>
