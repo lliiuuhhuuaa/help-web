@@ -13,13 +13,13 @@
                 <button class="emoji-button" v-on:click="showEmoji=!showEmoji,constant.showTool = showEmoji"/>
 <!--                <div spellcheck="true" class="input-text" name="text" v-on:keydown.enter.prevent="sendMsg"-->
 <!--                     placeholder="可以点这里输入问题" contenteditable="true" v-html="content"></div>-->
-                <input spellcheck="true" class="input-text" name="text" v-on:keydown.enter.prevent="sendMsg"
-                     placeholder="可以点这里输入问题" contenteditable="true" v-model="content"/>
+                <input autocomplete="off" class="input-text" v-model="content" name="text" v-on:keypress.enter="sendMsg"
+                       placeholder="可以点这里输入问题"/>
                 <button class="send-button" v-bind:class="{'active':send}" v-on:click="send?sendMsg():toggleTool()"/>
             </div>
             <div class="tool-bar" v-if="this.constant.showTool">
                 <ul class="emoji-body" v-if="showEmoji">
-                    <li class="emoji-item" v-for="index of 20" :key="index"><img :src="getEmojiUrl(index)"/></li>
+                    <li class="emoji-item" v-for="index of 20" :key="index"><img :src="getEmojiUrl(index)" @click="sendEmojiMsg(index)"/></li>
                 </ul>
                 <div v-else>
                     <div class="tool-item stop" @click="stopChat" v-if="staff||this.constant.staffState">终止会话</div>
@@ -240,6 +240,18 @@
                 }
                 this.content = "";
             },
+            //发送消息
+            sendEmojiMsg: function (index) {
+                let time = +new Date();
+                if (this.prevSendTime + 1000 > time) {
+                    this.$layer.msg("发送太频繁了");
+                    return;
+                }
+                this.prevSendTime = time;
+                let image = '[:'+index+':]';
+                //发送
+                this.constant.waitSend = {tag: image};
+            },
             sendQuickMsg: function (item) {
                 let time = +new Date();
                 if (this.prevSendTime + 1000 > time) {
@@ -304,7 +316,7 @@
             },
             //获取表情包地址
             getEmojiUrl:function(index){
-                return '/images/qq/'+index+'.jpeg';
+                return '/images/face/'+index+'.jpeg';
             }
         },
         computed: {
@@ -401,7 +413,7 @@
         line-height: 30px;
         float: left;
         height: 30px;
-        width: calc(100% - 100px);
+        width: calc(100% - 110px);
         border: 0;
         outline: none;
         font-size: 16px;

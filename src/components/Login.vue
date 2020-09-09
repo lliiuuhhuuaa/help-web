@@ -39,6 +39,7 @@
             Loading
         },
         created() {
+            this.constant.loading = false;
             let loginSave = localStorage.getItem("login-save-state");
             if(loginSave){
                 this.save = true;

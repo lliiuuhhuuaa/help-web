@@ -270,6 +270,12 @@
                         storageType: temp.storageType,
                         process: null,
                     };
+                    //内置表情处理
+                    let oldTag = msgObj.tag;
+                    msgObj.tag =oldTag.replace(/\[:([0-9]{1,2}):\]/,"<img width='50px' src='/images/face/$1.jpeg'>");
+                    if(msgObj.tag!==oldTag){
+                        msgObj.type='html';
+                    }
                     if (temp.info) {
                         msgObj['info'] = JSON.parse(temp.info);
                     }
@@ -301,6 +307,11 @@
                     //只发送
                     this.requestSend(obj);
                     return;
+                }
+                //内置表情处理
+                obj['data'] = obj.tag.replace(/\[:([0-9]{1,2}):\]/,"<img width='50px' src='/images/face/$1.jpeg'/>");
+                if(obj['data']!==obj.tag){
+                    obj.type='face';
                 }
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
@@ -923,7 +934,7 @@
         line-height: 50px;
         text-align: center;
         color: #FFF;
-        font-size: 14px;
+        font-size: 12px;
         z-index: 2;
 
     }

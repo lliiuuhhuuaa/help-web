@@ -4,7 +4,7 @@
         <div v-else>
              <span v-if="item.createDate"
                    class="msg-time">{{new Date(item.createDate).format('yyyy-MM-dd HH:mm:ss')}} </span>
-            <div class="html-div" v-if="item.type==='html'" v-html="item.tag"></div>
+            <div class="html-div" v-if="item.type==='html'||item.type==='face'" v-html="item.type==='html'?item.tag:item.data"></div>
             <div class="img-div" v-else-if="item.storageType === constant.StorageType.CLOUD_IMG">
                 <UploadProcess :item="item"/>
                 <img src="@/assets/img/img.svg" @click="zoomImg" v-on:load.once="loadImg($event,item)"/>

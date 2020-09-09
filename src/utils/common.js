@@ -110,6 +110,9 @@ let install = function (Vue) {
             handleInputIng: function (_this,data,result) {
                 let temp = null;
                 if(result){
+                    if(data.msg.match(/\[:([0-9]{1,2}):\]/)){
+                        return false;
+                    }
                     for (let i = _this.msgList.length - 1; i >= _this.msgList.length - 10 && i >= 0; i--) {
                         temp = _this.msgList[i];
                         if (temp.id === 9999999999998) {

@@ -100,6 +100,11 @@
                     this.requestSend(obj);
                     return;
                 }
+                //内置表情处理
+                obj['data'] =obj.tag.replace(/\[:([0-9]{1,2}):\]/,"<img width='50px' src='/images/face/$1.jpeg'/>");
+                if(obj['data']!==obj.tag){
+                    obj.type='face';
+                }
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
                 //显示消息
@@ -247,6 +252,12 @@
                         storageType: temp.storageType,
                         process: null,
                     };
+                    let oldTag = msgObj.tag;
+                    //内置表情处理
+                    msgObj.tag =oldTag.replace(/\[:([0-9]{1,2}):\]/,"<img width='50px' src='/images/face/$1.jpeg'>");
+                    if(msgObj.tag!==oldTag){
+                        msgObj.type='html';
+                    }
                     if(forceScroll){
                         //强制滚动
                         msgObj['forceScroll'] = true;
@@ -258,6 +269,7 @@
                     this.msgList.sort((a, b) => {
                         return a.id - b.id
                     });
+                    this.$show.scrollBottom(this);
                 }
             },
             onRefresh(done) {
@@ -330,10 +342,8 @@
             }
         },
         watch: {
-            msgList: function (val) {
-                if(val&&val.le>0){
-                    this.$show.scrollBottom(this);
-                }
+            msgList: function () {
+                this.$show.scrollBottom(this);
             },
             //待发送更新
             waitSend: function (obj) {
@@ -510,7 +520,7 @@
         line-height: 50px;
         text-align: center;
         color: #0099CC;
-        font-size: 14px;
+        font-size: 12px;
         z-index: 2;
 
     }
