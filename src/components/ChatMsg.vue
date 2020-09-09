@@ -1,9 +1,9 @@
 <template>
     <div class="chat-msg" :class="item.class" v-if="item.class===MsgClass.SELF||item.class===MsgClass.REPLY||item.class===MsgClass.SYSTEM">
+        <span v-if="item.createDate"
+              class="msg-time">{{new Date(item.createDate).format('yyyy-MM-dd HH:mm:ss')}} </span>
         <div class="system-msg" v-if="item.class===MsgClass.SYSTEM">{{item.tag}}</div>
-        <div v-else>
-             <span v-if="item.createDate"
-                   class="msg-time">{{new Date(item.createDate).format('yyyy-MM-dd HH:mm:ss')}} </span>
+        <div class="msg-body" v-else>
             <div class="html-div" v-if="item.type==='html'||item.type==='face'" v-html="item.type==='html'?item.tag:item.data"></div>
             <div class="img-div" v-else-if="item.storageType === constant.StorageType.CLOUD_IMG">
                 <UploadProcess :item="item"/>
@@ -133,11 +133,14 @@
         display: inline-block;
         border-radius: 18px 18px 18px 18px;
         font-size: 16px;
-        padding: 16px;
         background: #FFF;
         text-align: left;
+        padding:0 !important;
     }
-
+    .msg-body{
+        position: relative;
+        padding: 16px;
+    }
     .chat-msg.self-msg {
         text-align: right;
         margin-left: 50px;
@@ -176,7 +179,6 @@
     .file-div {
         text-align: center;
     }
-
     .chat-msg.reply-msg .msg-time {
         left: 20px;
     }

@@ -119,7 +119,7 @@
                 <ChatMsg v-else :item="item"/>
             </div>
         </MessageLoad>
-        <div class="to-bottom point" v-if="constant.showScrollBottom" @click="scrollToBottom">回到底部</div>
+        <div class="to-bottom point" v-if="constant.showScrollBottom" @click="scrollToBottom"><span v-if="constant.activeMsgUnRead">{{constant.activeMsgUnRead}}条新消息</span>回到底部</div>
     </div>
 
 </template>
@@ -180,6 +180,7 @@
                 this.sockets.subscribe(this.constant.SocketEvent.CHAT_MSG, data => {
                     //缓存数据
                     this.$indexdb.putData(this.$db, "help_msg", data);
+                    this.constant.activeMsgUnRead =  this.constant.showScrollBottom?this.constant.activeMsgUnRead+1:0;
                     //输入状态同步结果显示处理
                     if(this.$show.handleInputIng(this,data,true)){
                         return;
@@ -271,10 +272,12 @@
                         process: null,
                     };
                     //内置表情处理
-                    let oldTag = msgObj.tag;
-                    msgObj.tag =oldTag.replace(/\[:([0-9]{1,2}):\]/,"<img width='50px' src='/images/face/$1.jpeg'>");
-                    if(msgObj.tag!==oldTag){
-                        msgObj.type='html';
+                    if(msgObj.tag instanceof String){
+                        let oldTag = msgObj.tag;
+                        msgObj.tag =oldTag.replace(/\[:([0-9]{1,2}):\]/,"<img width='50px' src='/images/face/$1.jpeg'>");
+                        if(msgObj.tag!==oldTag){
+                            msgObj.type='html';
+                        }
                     }
                     if (temp.info) {
                         msgObj['info'] = JSON.parse(temp.info);
@@ -294,7 +297,7 @@
                         }
                         return a.id - b.id
                     });
-                    this.$show.scrollBottom(this);
+                    this.$show.scrollBottom(this,forceScroll);
                 }
             },
             //点击推荐
@@ -309,13 +312,17 @@
                     return;
                 }
                 //内置表情处理
-                obj['data'] = obj.tag.replace(/\[:([0-9]{1,2}):\]/,"<img width='50px' src='/images/face/$1.jpeg'/>");
-                if(obj['data']!==obj.tag){
-                    obj.type='face';
+                if(obj.tag instanceof String) {
+                    obj['data'] = obj.tag.replace(/\[:([0-9]{1,2}):\]/, "<img width='50px' src='/images/face/$1.jpeg'/>");
+                    if (obj['data'] !== obj.tag) {
+                        obj.type = 'face';
+                    }
                 }
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
-                //强制更新
+                //显示消息
+                this.constant.showScrollBottom = false;
+                //强制滚动
                 obj['forceScroll'] = true;
                 //显示消息
                 this.msgList.push(obj);
@@ -605,6 +612,10 @@
                     return 'two';
                 }
                 return 'one';
+            },
+            //显示回到底部状态变更
+            scrollBottomUpdate(){
+                return this.constant.showScrollBottom;
             }
         },
         watch: {
@@ -653,6 +664,13 @@
                 if (val < 1 && val < old && !this.constant.staffState) {
                     let reply = {id: -new Date(), class: this.MsgClass.REPLY, tag: '已退出人工客服排队,现在可以使用自助服务'};
                     this.msgList.push(reply);
+                }
+            },
+            //显示回到底部状态变更
+            scrollBottomUpdate:function (val) {
+                if(!val){
+                    //未读消息清0
+                    this.constant.activeMsgUnRead = 0;
                 }
             }
         }
@@ -905,19 +923,24 @@
 
     .to-bottom {
         position: absolute;
-        padding: 2px 5px;
+        padding: 2px 20px 2px 5px;
         bottom: 5px;
         right: 12px;
         background-color: #FFF;
-        width: 80px;
         height: 30px;
         text-align: left;
         line-height: 30px;
         background-size: 25px 25px;
         background-repeat: no-repeat;
-        background-position-x: 65px;
+        background-position-x: right;
         background-position-y: center;
         background-image: url("../assets/img/down.svg");
+        width: auto;
+        display: inline-block;
+    }
+    .to-bottom span{
+        font-size: 14px;
+        color: #0099CC;
     }
     .network-delay{
         padding: 2px;

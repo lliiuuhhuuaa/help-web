@@ -30,13 +30,13 @@
 <style scoped>
     .circle_process {
         position: absolute;
-        right: 15px;
+        right: 5px;
         width: 50px;
         height: 50px;
         border-radius: 50%;
         text-align: center;
         line-height: 50px;
-        bottom: 15px;
+        bottom: 5px;
         background: rgba(255,255,255,0.5);
     }
     .circle_process .wrapper{

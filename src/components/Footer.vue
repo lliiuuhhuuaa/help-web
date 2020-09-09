@@ -524,6 +524,7 @@
     }
     .stop-notice{
         height: 50px;
+        line-height: 50px;
     }
     .stop-notice span{
         font-size: 18px;

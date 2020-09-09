@@ -101,15 +101,17 @@
                     return;
                 }
                 //内置表情处理
-                obj['data'] =obj.tag.replace(/\[:([0-9]{1,2}):\]/,"<img width='50px' src='/images/face/$1.jpeg'/>");
-                if(obj['data']!==obj.tag){
-                    obj.type='face';
+                if(obj.tag instanceof String) {
+                    obj['data'] = obj.tag.replace(/\[:([0-9]{1,2}):\]/, "<img width='50px' src='/images/face/$1.jpeg'/>");
+                    if (obj['data'] !== obj.tag) {
+                        obj.type = 'face';
+                    }
                 }
                 obj.class = this.MsgClass.SELF;
                 obj.id = new Date().getTime();
                 //显示消息
                 this.constant.showScrollBottom = false;
-                //强制更新
+                //强制滚动
                 obj['forceScroll'] = true;
                 this.msgList.push(obj);
                 this.$show.scrollBottom(this);
@@ -252,11 +254,14 @@
                         storageType: temp.storageType,
                         process: null,
                     };
-                    let oldTag = msgObj.tag;
+
                     //内置表情处理
-                    msgObj.tag =oldTag.replace(/\[:([0-9]{1,2}):\]/,"<img width='50px' src='/images/face/$1.jpeg'>");
-                    if(msgObj.tag!==oldTag){
-                        msgObj.type='html';
+                    if(msgObj.tag instanceof String) {
+                        let oldTag = msgObj.tag;
+                        msgObj.tag = oldTag.replace(/\[:([0-9]{1,2}):\]/, "<img width='50px' src='/images/face/$1.jpeg'>");
+                        if (msgObj.tag !== oldTag) {
+                            msgObj.type = 'html';
+                        }
                     }
                     if(forceScroll){
                         //强制滚动
@@ -269,7 +274,7 @@
                     this.msgList.sort((a, b) => {
                         return a.id - b.id
                     });
-                    this.$show.scrollBottom(this);
+                    this.$show.scrollBottom(this,forceScroll);
                 }
             },
             onRefresh(done) {
