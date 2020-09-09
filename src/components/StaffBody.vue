@@ -101,7 +101,7 @@
                     return;
                 }
                 //内置表情处理
-                if(obj.tag instanceof String) {
+                if(typeof(obj.tag)=='string') {
                     obj['data'] = obj.tag.replace(/\[:([0-9]{1,2}):\]/, "<img width='50px' src='/images/face/$1.jpeg'/>");
                     if (obj['data'] !== obj.tag) {
                         obj.type = 'face';
@@ -256,7 +256,7 @@
                     };
 
                     //内置表情处理
-                    if(msgObj.tag instanceof String) {
+                    if(typeof(msgObj.tag)=='string') {
                         let oldTag = msgObj.tag;
                         msgObj.tag = oldTag.replace(/\[:([0-9]{1,2}):\]/, "<img width='50px' src='/images/face/$1.jpeg'>");
                         if (msgObj.tag !== oldTag) {

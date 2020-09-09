@@ -110,7 +110,7 @@ let install = function (Vue) {
             handleInputIng: function (_this,data,result) {
                 let temp = null;
                 if(result){
-                    if(data.msg instanceof String) {
+                    if(typeof(data.msg)=='string') {
                         if (data.msg.match(/\[:([0-9]{1,2}):\]/)) {
                             return false;
                         }
@@ -153,6 +153,33 @@ let install = function (Vue) {
                             break;
                         }
                     }
+                }
+            },
+            horizontalScrolling:function (e) {
+                let _this = null;
+                for(let i=0;i<e.path.length;i++){
+                    //查找父级
+                    if(e.path[i].className){
+                        if(e.path[i].className.indexOf("horizontal-scrolling")>-1){
+                            _this = e.path[i];
+                        }
+                    }
+                }
+                if(_this==null){
+                    return true;
+                }
+                let startX = _this.scrollLeft+e.layerX;
+                document.onmousemove = mouseMove;
+                document.onmouseleave = mouseUp;
+                document.onmouseup = mouseUp;
+                // 鼠标按下
+                function mouseMove(e){
+                    _this.scrollLeft =startX-e.layerX;
+
+                }
+                //鼠标弹起
+                function mouseUp(){
+                    document.onmousemove = null;
                 }
             }
         }

@@ -18,8 +18,8 @@
                 <button class="send-button" v-bind:class="{'active':send}" v-on:click="send?sendMsg():toggleTool()"/>
             </div>
             <div class="tool-bar" v-if="this.constant.showTool">
-                <ul class="emoji-body" v-if="showEmoji">
-                    <li class="emoji-item" v-for="index of 20" :key="index"><img :src="getEmojiUrl(index)" @click="sendEmojiMsg(index)"/></li>
+                <ul class="emoji-body horizontal-scrolling" v-if="showEmoji" @mousedown.self="$show.horizontalScrolling">
+                    <li class="emoji-item" v-for="index of 20" :key="index"><img :src="getEmojiUrl(index)" @click="sendEmojiMsg(index)" @mousedown.prevent="$show.horizontalScrolling"/></li>
                 </ul>
                 <div v-else>
                     <div class="tool-item stop" @click="stopChat" v-if="staff||this.constant.staffState">终止会话</div>
@@ -79,6 +79,11 @@
                     _this.$socket.emit(_this.constant.SocketEvent.INPUT_STATE_SYNC,{userId:userId,state:false})
                 }
             }
+            window.onload = function () {
+                //水平滚动初始化
+             //   _this.$show.horizontalScrolling();
+            }
+
 
         },
         methods: {
@@ -561,6 +566,10 @@
         overflow-x: auto;
         padding: 5px;
         background: rgba(255,255,255,0.8);
+        -webkit-user-select:none;
+        -moz-user-select:none;
+        -o-user-select:none;
+        user-select:none;
     }
     .emoji-body .emoji-item{
         border-radius: 5px;
