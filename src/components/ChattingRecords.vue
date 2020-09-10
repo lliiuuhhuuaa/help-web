@@ -1,10 +1,7 @@
 <template>
     <div class="body" :style="{height:calcHeight}">
-        <div class="no-user-body" v-if="this.constant.activeUserId<1">
-            <div class="mete-item handle"><i></i><b>处理离线问题</b></div>
-            <div class="mete-item entering"><i></i><b>录入帮助词库</b></div>
-            <div class="mete-item record"><router-link to="records"><i></i><b>查看聊天记录</b></router-link></div>
-            <div class="mete-item exit" @click="exit"><i></i><b>退出登陆</b></div>
+        <div class="user-body">
+            <div class="mete-item"  v-for="item in helpUser" :key="item.userId"><div>未知用户名</div><span>会话时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span></div>
         </div>
         <div class="msg-item-body-shelter" v-if="showShelterList.length>0">
             <div class="msg-item" v-bind:class="item.class" v-for="item in showShelterList" v-bind:key="item.id">
@@ -16,7 +13,6 @@
                 <ChatMsg :item="item"/>
             </div>
         </MessageLoad>
-        <div class="to-bottom point" v-if="constant.showScrollBottom" @click="scrollToBottom"><span v-if="constant.activeMsgUnRead">{{constant.activeMsgUnRead}}条新消息</span>回到底部</div>
     </div>
 
 </template>
@@ -52,40 +48,13 @@
                 waitAskList: [],
                 //显示遮挡层
                 showShelterList: [],
+                //帮助过的用户
+                helpUser:[],
             }
         },
         created() {
-            let _this = this;
-            window.SD = function (tag) {
-                _this.selfSendMsg({'tag': tag})
-            };
-            //监听消息
-            this.sockets.subscribe(this.constant.SocketEvent.CHAT_MSG, data => {
-                //缓存数据
-                this.$indexdb.putData(this.$db, "help_msg", data);
-                if(this.constant.activeUserId!==data.userId){
-                    this.constant.msgUnRead[data.userId] = this.constant.msgUnRead[data.userId]?this.constant.msgUnRead[data.userId]+1:1;
-                    if(this.constant.msgUnRead[data.userId]>99){
-                        this.constant.msgUnRead[data.userId] = 99;
-                    }
-                    //复制对象,不然视图不会更新
-                    this.constant.msgUnRead = Object.assign({},this.constant.msgUnRead);
-                }else{
-                    this.constant.activeMsgUnRead =  this.constant.showScrollBottom?this.constant.activeMsgUnRead+1:0;
-                }
-                //输入状态同步结果显示处理
-                if(this.$show.handleInputIng(this,data,true)){
-                    return;
-                }
-                this.showMsgData(data);
-            });
-            //监听消息
-            this.sockets.subscribe(this.constant.SocketEvent.INPUT_STATE_SYNC, data => {
-                if (this.constant.activeUserId === data.userId) {
-                    //输入状态同步显示处理
-                    this.$show.handleInputIng(this,data);
-                }
-            });
+            //获取帮助过的用户
+            this.listHelpUser();
         },
         methods: {
             //点击推荐
@@ -284,14 +253,27 @@
                     this.showShelterList = [];
                 }
             },
-            exit: function () {
-                this.$ajax.post("/user/logout", {}, {
+            //获取帮助过的用户
+            listHelpUser: function () {
+                this.$ajax.post("/staff/online/listHelpUser", {}, {
                     animation: this.constant.Animation.PART,
-                    ignore: true
-                }).then(() => {
-                    localStorage.removeItem("tk");
-                    this.constant.login = false;
-                    this.$router.push({path: '/login'})
+                    alertError: true
+                }).then((data) => {
+                   this.helpUser = data.data;
+                   this.listMerchantUser();
+                });
+            },
+            //获取帮助过的用户
+            listMerchantUser: function () {
+                let userIds = [];
+                for(let i=0;i<this.helpUser.length;i++){
+                    userIds.push(this.helpUser[i].userId);
+                }
+                this.$ajax.post("/merchant/user/listMerchantUser", userIds, {
+                    alertError: true,
+                    headers:{"Content-Type": 'application/json;charset=utf-8'},
+                }).then((data) => {
+                   console.log(data);
                 });
             },
             //滚动到底部
@@ -301,14 +283,6 @@
             }
         },
         computed: {
-            //待发送更新
-            waitSend() {
-                return this.constant.waitSend;
-            },
-            //激活用户变更
-            activeUser() {
-                return this.constant.activeUserId;
-            },
             //高度计算
             calcHeight: function () {
                 let height = this.constant.windowHeight - 80;
@@ -327,27 +301,6 @@
             }
         },
         watch: {
-            msgList: function () {
-                this.$show.scrollBottom(this);
-            },
-            //待发送更新
-            waitSend: function (obj) {
-                if (obj) {
-                    this.selfSendMsg(obj);
-                }
-            },
-            //激活用户变更
-            activeUser: function (id) {
-                this.msgList = [];
-                this.listMore = true;
-                this.constant.showTool = false;
-                this.constant.showScrollBottom = false;
-                this.constant.activeMsgUnRead = 0;
-                this.constant.showFooter = id > 0;
-                if (id > 0) {
-                    this.listHelpMsg(1, id);
-                }
-            },
             //显示回到底部状态变更
             scrollBottomUpdate:function (val) {
                 if(!val){
@@ -416,15 +369,17 @@
         word-wrap: break-word;
         border-radius: 18px 18px 18px 0;
     }
-    .no-user-body {
+    .user-body {
         text-align: center;
+        height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
     .mete-item {
-        width: 100px;
+        width: auto;
         text-align: center;
-        height: 100px;
-        line-height: 100px;
+        height: 50px;
         display: inline-block;
         white-space: nowrap;
         background-color: #FFF;
@@ -432,65 +387,15 @@
         padding: 10px;
         border: 2px solid #FFF;
         border-radius: 5px;
-        background-size: 30px 30px;
-        background-repeat: no-repeat;
-        background-position-x: center;
-        background-position-y: 30px;
+        cursor: pointer;
     }
-    .mete-item>a,.mete-item b{
-        color:#000;
-        text-decoration: none;
-    }
+
     .mete-item:hover {
         border: 2px solid #0099CC;
     }
-
-    .mete-item i {
-        height: 20px;
-        display: block;
-    }
-
-    .mete-item.handle {
-        background-image: url("../assets/img/handle.svg");
-    }
-
-    .mete-item.record {
-        background-image: url("../assets/img/record.svg");
-    }
-
-    .mete-item.entering {
-        background-image: url("../assets/img/entering.svg");
-    }
-
-    .mete-item.exit {
-        background-image: url("../assets/img/exit.svg");
-    }
-
     .msg-item-body-shelter {
         width: 100%;
         height: 100%;
         z-index: 10;
-    }
-
-    .to-bottom {
-        position: absolute;
-        padding: 2px 20px 2px 5px;
-        bottom: 5px;
-        right: 12px;
-        background-color: #FFF;
-        height: 30px;
-        text-align: left;
-        line-height: 30px;
-        background-size: 25px 25px;
-        background-repeat: no-repeat;
-        background-position-x: right;
-        background-position-y: center;
-        background-image: url("../assets/img/down.svg");
-        width: auto;
-        display: inline-block;
-    }
-    .to-bottom span{
-        font-size: 14px;
-        color: #0099CC;
     }
 </style>
