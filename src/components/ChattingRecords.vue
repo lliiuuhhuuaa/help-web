@@ -1,18 +1,19 @@
 <template>
     <div class="body" :style="{height:calcHeight}">
-        <div class="user-body">
-            <div class="mete-item"  v-for="item in helpUser" :key="item.userId"><div>未知用户名</div><span>会话时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span></div>
+        <div class="user-body" v-if="activeUser<0">
+            <div class="mete-item"  v-for="item in helpUser" :key="item.userId" @click="activeUser=item.userId"><div>{{item.nickname?item.nickname:item.user?item.user:'未知用户名'}}</div><span>会话时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span></div>
         </div>
-        <div class="msg-item-body-shelter" v-if="showShelterList.length>0">
+        <div class="msg-item-body-shelter" v-if="activeUser>0&&showShelterList.length>0">
             <div class="msg-item" v-bind:class="item.class" v-for="item in showShelterList" v-bind:key="item.id">
                 <ChatMsg :item="item"/>
             </div>
         </div>
-        <MessageLoad :on-refresh="onRefresh">
+        <MessageLoad :on-refresh="onRefresh" v-if="activeUser>0">
             <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" v-bind:key="item.id">
                 <ChatMsg :item="item"/>
             </div>
         </MessageLoad>
+        <div class="back-list"><router-link to="./"><div class="back-item" :style="{width:backItemWidth}">返回主页</div></router-link><div class="back-item"  :style="{width:backItemWidth}" v-if="activeUser>0" @click="activeUser=-1,msgList=[]">返回列表</div></div>
     </div>
 
 </template>
@@ -50,6 +51,10 @@
                 showShelterList: [],
                 //帮助过的用户
                 helpUser:[],
+                //激活选择
+                activeUser:-1,
+                //返回项宽度
+                backItemWidth:'calc(100% - 4)'
             }
         },
         created() {
@@ -105,7 +110,6 @@
                         return;
                     }
                 }).catch(e => {
-                    console.log(e);
                     if (obj.storageType === this.constant.StorageType.CLOUD_IMG || obj.storageType === this.constant.StorageType.CLOUD_FILE) {
                         obj.process = this.constant.ResultCode.ERROR_SEND;
                         return;
@@ -132,7 +136,7 @@
                         lastId = this.msgList[key].id;
                     }
                 }
-                this.listHelpMsg(this.page + 1, this.constant.activeUserId, lastId, callback);
+                this.listHelpMsg(this.page + 1, this.activeUser, lastId, callback);
             },
             //加载历史记录
             listHelpMsg: function (page, userId, lastId, callback) {
@@ -146,6 +150,7 @@
                     userId: userId
                 }).then(res => {
                     let data = res.data.rows;
+                    console.log(data)
                     if (data == null || data.length < 1) {
                         this.listMore = false;
                         if (callback) {
@@ -200,7 +205,7 @@
                 for (let i = 0; i < data.length; i++) {
                     temp = data[i];
                     //防串数据
-                    if (temp.userId !== this.constant.activeUserId) {
+                    if (temp.userId !== this.activeUser) {
                         break;
                     }
                     //检查是否有重复消息
@@ -273,7 +278,17 @@
                     alertError: true,
                     headers:{"Content-Type": 'application/json;charset=utf-8'},
                 }).then((data) => {
-                   console.log(data);
+                    data = data.data;
+                    for(let i=0;i<data.length;i++){
+                        for(let k=0;k<this.helpUser.length;k++){
+                            if(data[i].id===this.helpUser[k].userId){
+                                this.helpUser[k]['nickname'] = data[i].nickname;
+                                this.helpUser[k]['user'] = data[i].user;
+                                this.helpUser.splice(k,1,this.helpUser[k]);
+                                break;
+                            }
+                        }
+                    }
                 });
             },
             //滚动到底部
@@ -307,6 +322,15 @@
                     //未读消息清0
                     this.constant.activeMsgUnRead = 0;
                 }
+            },
+            //激活用户变更
+            activeUser:function (val) {
+                if(val>0){
+                    this.page = 0;
+                    this.listMore = true;
+                    this.listHelpMsg(1,val,null);
+                }
+                this.backItemWidth = window.innerWidth/(val>0?2:1)-4+'px';
             }
         }
     }
@@ -316,6 +340,7 @@
 <style scoped>
     .body {
         background: rgba(65, 152, 199, 0.1);
+        height: 100%;
         width: 100%;
         overflow: hidden;
         scrollbar-width: none; /* firefox */
@@ -395,7 +420,22 @@
     }
     .msg-item-body-shelter {
         width: 100%;
-        height: 100%;
+        height: calc(100% - 50px);
         z-index: 10;
+    }
+    #refresh-scroll,.user-body{
+        height: calc(100% - 50px);
+    }
+    .back-list .back-item{
+        width: calc(100% - 4px);
+        margin: 2px;
+        display: inline-block;
+        background: #0099CC;
+        line-height:50px;
+        color: #FFF;
+        font-size: 16px;
+        height: 50px;
+        border-radius: 5px;
+        cursor: pointer;
     }
 </style>

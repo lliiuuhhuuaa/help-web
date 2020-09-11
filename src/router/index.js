@@ -23,12 +23,12 @@ export default new Router({
             //配置多级路由，在children数组里添加子路由信息
             children:[
                 {
-                    path:"/",
-                    component:StaffBody
+                    path:"records",
+                    component:ChattingRecords
                 },
                 {
-                    path:"/records",
-                    component:ChattingRecords
+                    path:"*",
+                    component:StaffBody
                 },
             ]
         },
