@@ -1,45 +1,22 @@
 <template>
     <div class="body" :style="{height:calcHeight}">
-        <div class="user-body" v-if="activeUser<0">
-            <div class="mete-item"  v-for="item in helpUser" :key="item.userId" @click="activeUser=item.userId"><div>{{item.nickname?item.nickname:item.user?item.user:'未知用户名'}}</div><span>会话时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span></div>
+        <div class="user-body" v-if="waitAsk.length>0">
+            <div class="mete-item"  v-for="item in waitAsk" :key="item.index" @click="activeUser=item.userId"><div>用户名:{{item.nickname?item.nickname:item.user?item.user:'未知用户名'}}</div><div class="ellipsis">问题:{{item.tag}}</div><span>提问时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span></div>
         </div>
-        <div class="msg-item-body-shelter" v-if="activeUser>0&&showShelterList.length>0">
-            <div class="msg-item" v-bind:class="item.class" v-for="item in showShelterList" v-bind:key="item.id">
-                <ChatMsg :item="item"/>
-            </div>
-        </div>
-        <MessageLoad :on-refresh="onRefresh" v-if="activeUser>0">
-            <div class="msg-item" v-bind:class="item.class" v-for="item in msgList" v-bind:key="item.id">
-                <ChatMsg :item="item"/>
-            </div>
-        </MessageLoad>
         <div class="back-list"><router-link to="./"><div class="back-item" :style="{width:backItemWidth}">返回主页</div></router-link><div class="back-item"  :style="{width:backItemWidth}" v-if="activeUser>0" @click="activeUser=-1,msgList=[]">返回列表</div></div>
     </div>
 
 </template>
 
 <script>
-    import ChatMsg from "./ChatMsg";
-    import MessageLoad from "./MessageLoad";
 
     export default {
         name: 'StaffBody',
         props: {},
         components: {
-            MessageLoad,
-            ChatMsg,
         },
         data() {
             return {
-                MsgClass: {
-                    "SELF": "self-msg",
-                    "SYSTEM": "system-msg",
-                    "REPLY": "reply-msg",
-                    "RECOMMEND": "recommend-msg",
-                    "ADVERTISING": "advertising-msg"
-                },
-                msgList: [],
-                scrollState: true, // 是否可以滑动
                 loaded: false,
                 page: 0,
                 rows: 10,
@@ -49,7 +26,7 @@
                 //显示遮挡层
                 showShelterList: [],
                 //帮助过的用户
-                helpUser:[],
+                waitAsk:[],
                 //激活选择
                 activeUser:-1,
                 //返回项宽度
@@ -58,14 +35,75 @@
         },
         created() {
             //获取帮助过的用户
-            this.listHelpUser();
+            this.listWaitAsk();
         },
         methods: {
             //点击推荐
             clickRecommend: function (item) {
                 this.selfSendMsg({'tag': item})
             },
+            //发送消息
+            selfSendMsg: function (obj) {
+                if (obj.onlySend) {
+                    //只发送
+                    this.requestSend(obj);
+                    return;
+                }
+                //内置表情处理
+                if(typeof(obj.tag)=='string') {
+                    obj['data'] = obj.tag.replace(/\[:([0-9]{1,2}):\]/, "<img width='50px' src='/images/face/$1.jpeg'/>");
+                    if (obj['data'] !== obj.tag) {
+                        obj.type = 'face';
+                    }
+                }
+                obj.class = this.MsgClass.SELF;
+                obj.id = new Date().getTime();
+                //显示消息
+                this.constant.showScrollBottom = false;
+                //强制滚动
+                obj['forceScroll'] = true;
+                this.msgList.push(obj);
+                this.$show.scrollBottom(this);
+                //请求发送
+                if (!obj.onlyShow) {
+                    //非只显示
+                    this.requestSend(obj);
+                }
+            },
+            //请求发送消息
+            requestSend: function (obj) {
+                let data = {
+                    tag: this.$aes.encrypt(obj.tag),
+                    userId: this.constant.activeUserId
+                };
+                if (obj.storageType) {
+                    data['storageType'] = obj.storageType;
+                }
+                this.$ajax.post("/web/help/tag", data).then(res => {
+                    res = res.data;
+                    if (res.state === this.constant.MsgState.STAFF) {
+                        this.showStaffHandle(res, obj);
+                        return;
+                    }
+                }).catch(e => {
+                    if (obj.storageType === this.constant.StorageType.CLOUD_IMG || obj.storageType === this.constant.StorageType.CLOUD_FILE) {
+                        obj.process = this.constant.ResultCode.ERROR_SEND;
+                        return;
+                    }
+                    //回复消息为空时,操作本消息
+                    obj.tag = "<s>" + obj.tag + "</s><span style='color:#D00;font-size: 14px'>(" + e.message + ")</span>";
+                    obj.type = 'html';
+                    obj.id = -obj.id;
+                });
+            },
+            showStaffHandle: function (res, obj) {
+                if (res.storageType === this.constant.StaffType.SEND) {
+                    obj.id = res.result;
+                    obj.staff = 1;
+                    return;
+                }
 
+            },
             //加载历史记录
             getList: function (callback) {
                 let lastId = null;
@@ -197,37 +235,49 @@
                 }
             },
             //获取帮助过的用户
-            listHelpUser: function () {
-                this.$ajax.post("/staff/online/listHelpUser", {}, {
+            listWaitAsk: function () {
+                this.$ajax.post("/wait/ask/listWaitAsk", {}, {
                     animation: this.constant.Animation.PART,
                     alertError: true
                 }).then((data) => {
-                   this.helpUser = data.data;
+                    data = data.data;
+                   this.waitAsk = data.rows;
                    this.listMerchantUser();
                 });
             },
             //获取帮助过的用户
             listMerchantUser: function () {
                 let userIds = [];
-                for(let i=0;i<this.helpUser.length;i++){
-                    userIds.push(this.helpUser[i].userId);
+                for(let i=0;i<this.waitAsk.length;i++){
+                    userIds.push(this.waitAsk[i].userId);
+                }
+                if(userIds.length<1){
+                    return;
                 }
                 this.$ajax.post("/merchant/user/listMerchantUser", userIds, {
                     alertError: true,
                     headers:{"Content-Type": 'application/json;charset=utf-8'},
                 }).then((data) => {
                     data = data.data;
+                    if(!data){
+                        return;
+                    }
                     for(let i=0;i<data.length;i++){
-                        for(let k=0;k<this.helpUser.length;k++){
-                            if(data[i].id===this.helpUser[k].userId){
-                                this.helpUser[k]['nickname'] = data[i].nickname;
-                                this.helpUser[k]['user'] = data[i].user;
-                                this.helpUser.splice(k,1,this.helpUser[k]);
+                        for(let k=0;k<this.waitAsk.length;k++){
+                            if(data[i].id===this.waitAsk[k].userId){
+                                this.waitAsk[k]['nickname'] = data[i].nickname;
+                                this.waitAsk[k]['user'] = data[i].user;
+                                this.waitAsk.splice(k,1,this.waitAsk[k]);
                             }
                         }
                     }
                 });
             },
+            //滚动到底部
+            scrollToBottom: function () {
+                this.constant.showScrollBottom = false;
+                this.$show.scrollBottom(this);
+            }
         },
         computed: {
             //高度计算
@@ -242,15 +292,10 @@
                 this.$show.scrollToBottom(this);
                 return height + 'px';
             },
-            //对话用户激活变更
-            activeUserId(){
-                return this.constant.activeUserId;
-            },
             //显示回到底部状态变更
             scrollBottomUpdate(){
                 return this.constant.showScrollBottom;
             }
-
         },
         watch: {
             //显示回到底部状态变更
@@ -268,11 +313,6 @@
                     this.listHelpMsg(1,val,null);
                 }
                 this.backItemWidth = window.innerWidth/(val>0?2:1)-4+'px';
-            },
-            activeUserId:function (val){
-                if(val>0){
-                    this.$router.push("./");
-                }
             }
         }
     }
@@ -345,8 +385,9 @@
 
     .mete-item {
         width: auto;
-        text-align: center;
-        height: 50px;
+        max-width: 40%;
+        text-align: left;
+        height: auto;
         display: inline-block;
         white-space: nowrap;
         background-color: #FFF;
@@ -356,7 +397,6 @@
         border-radius: 5px;
         cursor: pointer;
     }
-
     .mete-item:hover {
         border: 2px solid #0099CC;
     }

@@ -38,6 +38,21 @@
                 }
                 console.log("接收到数据更新", data);
             });
+            //监听消息
+            this.sockets.subscribe(this.constant.SocketEvent.CHAT_MSG, data => {
+                //缓存数据
+                this.$indexdb.putData(this.$db, "help_msg", data);
+                if(this.constant.activeUserId!==data.userId){
+                    this.constant.msgUnRead[data.userId] = this.constant.msgUnRead[data.userId]?this.constant.msgUnRead[data.userId]+1:1;
+                    if(this.constant.msgUnRead[data.userId]>99){
+                        this.constant.msgUnRead[data.userId] = 99;
+                    }
+                    //复制对象,不然视图不会更新
+                    this.constant.msgUnRead = Object.assign({},this.constant.msgUnRead);
+                }else{
+                    this.constant.activeMsgUnRead =  this.constant.showScrollBottom?this.constant.activeMsgUnRead+1:0;
+                }
+            });
             //获取当前排队数
             this.getCurrWaitCount();
             //获取当前聊天用户

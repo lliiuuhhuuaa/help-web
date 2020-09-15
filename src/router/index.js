@@ -6,6 +6,7 @@ import StaffApp from '@/components/StaffApp'
 import Login from "@/components/Login";
 import StaffBody from "../components/StaffBody";
 import ChattingRecords from "../components/ChattingRecords";
+import OfflineAsk from "../components/OfflineAsk";
 //弹窗插件
 Vue.use(Router);
 //路由
@@ -25,6 +26,10 @@ export default new Router({
                 {
                     path:"records",
                     component:ChattingRecords
+                },
+                {
+                    path:"offline",
+                    component:OfflineAsk
                 },
                 {
                     path:"*",

@@ -364,7 +364,7 @@
                         return;
                     }
                     if (res.state === this.constant.MsgState.WAIT) {
-                        reply.tag = "小六子解决不了,已经将您的问题提交给客服,请耐心等待回复哦！！！";
+                        reply.tag = "已经将您的问题提交给客服,请耐心等待回复哦！！！";
                         this.$show.scrollBottom(this);
                         return;
                     }

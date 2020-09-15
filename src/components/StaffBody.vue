@@ -1,9 +1,9 @@
 <template>
     <div class="body" :style="{height:calcHeight}">
-        <div class="no-user-body" v-if="this.constant.activeUserId<1">
-            <div class="mete-item handle"><i></i><b>处理离线问题</b></div>
+        <div class="no-user-body" v-if="constant.activeUserId<1">
+            <router-link to="offline"><div class="mete-item handle"><i></i><b>处理离线问题</b></div></router-link>
             <div class="mete-item entering"><i></i><b>录入帮助词库</b></div>
-            <div class="mete-item record"><router-link to="records"><i></i><b>查看聊天记录</b></router-link></div>
+            <router-link to="records"><div class="mete-item record"><i></i><b>查看聊天记录</b></div></router-link>
             <div class="mete-item exit" @click="exit"><i></i><b>退出登陆</b></div>
         </div>
         <div class="msg-item-body-shelter" v-if="showShelterList.length>0">
@@ -49,7 +49,6 @@
                 constant: this.$store.state,
                 staffState: false,
                 listMore: true,
-                waitAskList: [],
                 //显示遮挡层
                 showShelterList: [],
             }
@@ -61,18 +60,6 @@
             };
             //监听消息
             this.sockets.subscribe(this.constant.SocketEvent.CHAT_MSG, data => {
-                //缓存数据
-                this.$indexdb.putData(this.$db, "help_msg", data);
-                if(this.constant.activeUserId!==data.userId){
-                    this.constant.msgUnRead[data.userId] = this.constant.msgUnRead[data.userId]?this.constant.msgUnRead[data.userId]+1:1;
-                    if(this.constant.msgUnRead[data.userId]>99){
-                        this.constant.msgUnRead[data.userId] = 99;
-                    }
-                    //复制对象,不然视图不会更新
-                    this.constant.msgUnRead = Object.assign({},this.constant.msgUnRead);
-                }else{
-                    this.constant.activeMsgUnRead =  this.constant.showScrollBottom?this.constant.activeMsgUnRead+1:0;
-                }
                 //输入状态同步结果显示处理
                 if(this.$show.handleInputIng(this,data,true)){
                     return;
@@ -86,6 +73,10 @@
                     this.$show.handleInputIng(this,data);
                 }
             });
+            //处理路由直接跳转到页面时的情况
+            if (this.constant.activeUserId > 0) {
+                this.updateActiveUser(this.constant.activeUserId);
+            }
         },
         methods: {
             //点击推荐
@@ -294,11 +285,18 @@
                     this.$router.push({path: '/login'})
                 });
             },
-            //滚动到底部
-            scrollToBottom: function () {
+            //激活用户变更
+            updateActiveUser: function (id) {
+                this.msgList = [];
+                this.listMore = true;
+                this.constant.showTool = false;
                 this.constant.showScrollBottom = false;
-                this.$show.scrollBottom(this);
-            }
+                this.constant.activeMsgUnRead = 0;
+                this.constant.showFooter = id > 0;
+                if (id > 0) {
+                    this.listHelpMsg(1, id);
+                }
+            },
         },
         computed: {
             //待发送更新
@@ -338,15 +336,7 @@
             },
             //激活用户变更
             activeUser: function (id) {
-                this.msgList = [];
-                this.listMore = true;
-                this.constant.showTool = false;
-                this.constant.showScrollBottom = false;
-                this.constant.activeMsgUnRead = 0;
-                this.constant.showFooter = id > 0;
-                if (id > 0) {
-                    this.listHelpMsg(1, id);
-                }
+                this.updateActiveUser(id);
             },
             //显示回到底部状态变更
             scrollBottomUpdate:function (val) {

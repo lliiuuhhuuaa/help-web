@@ -77,7 +77,11 @@
                     _this.$socket.emit(_this.constant.SocketEvent.INPUT_STATE_SYNC,{userId:userId,state:false})
                 }
             }
-
+            if(!this.staff){
+                window.INPUT = function (tag) {
+                    _this.content = tag;
+                };
+            }
 
         },
         methods: {
