@@ -83,4 +83,10 @@
         text-overflow: ellipsis;
         -o-text-overflow:ellipsis;
     }
+    /*超出自动换行*/
+    .multi-line{
+        word-break: break-all;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
 </style>

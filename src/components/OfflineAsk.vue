@@ -1,9 +1,27 @@
 <template>
     <div class="body" :style="{height:calcHeight}">
-        <div class="user-body" v-if="waitAsk.length>0">
-            <div class="mete-item"  v-for="item in waitAsk" :key="item.index" @click="activeUser=item.userId"><div>用户名:{{item.nickname?item.nickname:item.user?item.user:'未知用户名'}}</div><div class="ellipsis">问题:{{item.tag}}</div><span>提问时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span></div>
+        <div class="user-body">
+            <div v-if="waitAsk.length>0 && !activeAsk">
+                <div class="mete-item" v-for="item in waitAsk" :key="item.index" @click="activeAsk=item">
+                    <div>用户名:{{item.nickname?item.nickname:item.user?item.user:'未知用户名'}}</div>
+                    <div class="ellipsis" v-html="item.tag.replace('问题','<br/>问题')"></div>
+                    <span>提问时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span></div>
+            </div>
+            <div v-if="activeAsk">
+                <div class="mete-item mete-item-once">
+                    <div>用户名:{{activeAsk.nickname?activeAsk.nickname:activeAsk.user?activeAsk.user:'未知用户名'}}</div>
+                    <div class="multi-line" v-html="activeAsk.tag.replace('问题','<br/>问题')"></div>
+                </div>
+
+            </div>
         </div>
-        <div class="back-list"><router-link to="./"><div class="back-item" :style="{width:backItemWidth}">返回主页</div></router-link><div class="back-item"  :style="{width:backItemWidth}" v-if="activeUser>0" @click="activeUser=-1,msgList=[]">返回列表</div></div>
+
+        <div class="back-list">
+            <router-link to="./">
+                <div class="back-item" :style="{width:backItemWidth}">返回主页</div>
+            </router-link>
+            <div class="back-item" :style="{width:backItemWidth}" v-if="activeAsk" @click="activeAsk=null">返回列表</div>
+        </div>
     </div>
 
 </template>
@@ -13,8 +31,7 @@
     export default {
         name: 'StaffBody',
         props: {},
-        components: {
-        },
+        components: {},
         data() {
             return {
                 loaded: false,
@@ -26,11 +43,11 @@
                 //显示遮挡层
                 showShelterList: [],
                 //帮助过的用户
-                waitAsk:[],
+                waitAsk: [],
                 //激活选择
-                activeUser:-1,
+                activeAsk: null,
                 //返回项宽度
-                backItemWidth:'calc(100% - 4)'
+                backItemWidth: 'calc(100% - 4)'
             }
         },
         created() {
@@ -50,7 +67,7 @@
                     return;
                 }
                 //内置表情处理
-                if(typeof(obj.tag)=='string') {
+                if (typeof (obj.tag) == 'string') {
                     obj['data'] = obj.tag.replace(/\[:([0-9]{1,2}):\]/, "<img width='50px' src='/images/face/$1.jpeg'/>");
                     if (obj['data'] !== obj.tag) {
                         obj.type = 'face';
@@ -146,7 +163,7 @@
                         }, 500);
                     }
                     setTimeout(() => {
-                        this.showMsgData(data,true);
+                        this.showMsgData(data, true);
                     }, 600);
                     setTimeout(() => {
                         this.showShelterList = [];
@@ -166,10 +183,10 @@
                     let start = (page - 1) * this.rows;
                     let end = page * this.rows;
                     data = data.slice(start, end);
-                    this.showMsgData(data,true);
+                    this.showMsgData(data, true);
                 })
             },
-            showMsgData(data,forceScroll) {
+            showMsgData(data, forceScroll) {
                 if (!data) {
                     return;
                 }
@@ -205,14 +222,14 @@
                     };
 
                     //内置表情处理
-                    if(typeof(msgObj.tag)=='string') {
+                    if (typeof (msgObj.tag) == 'string') {
                         let oldTag = msgObj.tag;
                         msgObj.tag = oldTag.replace(/\[:([0-9]{1,2}):\]/, "<img width='50px' src='/images/face/$1.jpeg'>");
                         if (msgObj.tag !== oldTag) {
                             msgObj.type = 'html';
                         }
                     }
-                    if(forceScroll){
+                    if (forceScroll) {
                         //强制滚动
                         msgObj['forceScroll'] = true;
                     }
@@ -223,7 +240,7 @@
                     this.msgList.sort((a, b) => {
                         return a.id - b.id
                     });
-                    this.$show.scrollBottom(this,forceScroll);
+                    this.$show.scrollBottom(this, forceScroll);
                 }
             },
             onRefresh(done) {
@@ -241,33 +258,33 @@
                     alertError: true
                 }).then((data) => {
                     data = data.data;
-                   this.waitAsk = data.rows;
-                   this.listMerchantUser();
+                    this.waitAsk = data.rows;
+                    this.listMerchantUser();
                 });
             },
             //获取帮助过的用户
             listMerchantUser: function () {
                 let userIds = [];
-                for(let i=0;i<this.waitAsk.length;i++){
+                for (let i = 0; i < this.waitAsk.length; i++) {
                     userIds.push(this.waitAsk[i].userId);
                 }
-                if(userIds.length<1){
+                if (userIds.length < 1) {
                     return;
                 }
                 this.$ajax.post("/merchant/user/listMerchantUser", userIds, {
                     alertError: true,
-                    headers:{"Content-Type": 'application/json;charset=utf-8'},
+                    headers: {"Content-Type": 'application/json;charset=utf-8'},
                 }).then((data) => {
                     data = data.data;
-                    if(!data){
+                    if (!data) {
                         return;
                     }
-                    for(let i=0;i<data.length;i++){
-                        for(let k=0;k<this.waitAsk.length;k++){
-                            if(data[i].id===this.waitAsk[k].userId){
+                    for (let i = 0; i < data.length; i++) {
+                        for (let k = 0; k < this.waitAsk.length; k++) {
+                            if (data[i].id === this.waitAsk[k].userId) {
                                 this.waitAsk[k]['nickname'] = data[i].nickname;
                                 this.waitAsk[k]['user'] = data[i].user;
-                                this.waitAsk.splice(k,1,this.waitAsk[k]);
+                                this.waitAsk.splice(k, 1, this.waitAsk[k]);
                             }
                         }
                     }
@@ -293,26 +310,30 @@
                 return height + 'px';
             },
             //显示回到底部状态变更
-            scrollBottomUpdate(){
+            scrollBottomUpdate() {
                 return this.constant.showScrollBottom;
-            }
+            },
+            //对话用户激活变更
+            activeUserId() {
+                return this.constant.activeUserId;
+            },
         },
         watch: {
             //显示回到底部状态变更
-            scrollBottomUpdate:function (val) {
-                if(!val){
+            scrollBottomUpdate: function (val) {
+                if (!val) {
                     //未读消息清0
                     this.constant.activeMsgUnRead = 0;
                 }
             },
             //激活用户变更
-            activeUser:function (val) {
-                if(val>0){
-                    this.page = 0;
-                    this.listMore = true;
-                    this.listHelpMsg(1,val,null);
+            activeAsk: function (val) {
+                this.backItemWidth = window.innerWidth / (val? 2 : 1) - 4 + 'px';
+            },
+            activeUserId: function (val) {
+                if (val > 0) {
+                    this.$router.push("./");
                 }
-                this.backItemWidth = window.innerWidth/(val>0?2:1)-4+'px';
             }
         }
     }
@@ -335,56 +356,16 @@
         display: none; /* Chrome Safari */
     }
 
-    .msg-item {
-        margin-top: 10px;
-        font-size: 16px;
-        padding: 10px;
-        word-break: break-all;
-        word-wrap: break-word;
-        position: relative;
-    }
-
-    .msg-item > div {
-        border-radius: 18px 18px 18px 18px;
-        font-size: 16px;
-        padding: 16px;
-        background: #FFF;
-        text-align: left;
-    }
-
-    .msg-item.self-msg {
-        text-align: right;
-        margin-left: 20%;
-    }
-
-    .self-msg > div {
-        color: #FFF;
-        background: #5CC9F5;
-        text-align: left;
-        word-break: break-all;
-        word-wrap: break-word;
-        border-radius: 18px 18px 0 18px;
-    }
-
-    .msg-item.reply-msg {
-        text-align: left;
-        margin-right: 20%;
-    }
-
-    .reply-msg > div {
-        word-break: break-all;
-        word-wrap: break-word;
-        border-radius: 18px 18px 18px 0;
-    }
     .user-body {
         text-align: center;
-        height: 100%;
+        height: calc(100% - 50px);
         overflow-y: auto;
         overflow-x: hidden;
     }
 
     .mete-item {
         width: auto;
+        min-width: 250px;
         max-width: 40%;
         text-align: left;
         height: auto;
@@ -397,23 +378,22 @@
         border-radius: 5px;
         cursor: pointer;
     }
+
     .mete-item:hover {
         border: 2px solid #0099CC;
     }
-    .msg-item-body-shelter {
-        width: 100%;
-        height: calc(100% - 50px);
-        z-index: 10;
+
+    .mete-item-once {
+        width: calc(100% - 44px);
+        min-width: auto;
+        max-width: none;
     }
-    #refresh-scroll,.user-body{
-        height: calc(100% - 50px);
-    }
-    .back-list .back-item{
+    .back-list .back-item {
         width: calc(100% - 4px);
         margin: 2px;
         display: inline-block;
         background: #0099CC;
-        line-height:50px;
+        line-height: 50px;
         color: #FFF;
         font-size: 16px;
         height: 50px;
