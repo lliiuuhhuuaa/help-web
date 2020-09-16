@@ -8,26 +8,30 @@
                     <span>提问时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span></div>
             </div>
             <div v-if="activeAsk">
-                <div class="mete-item mete-item-once">
+                <div class="mete-item mete-item-once" ref="meteItemOnce">
                     <div>用户名:{{activeAsk.nickname?activeAsk.nickname:activeAsk.user?activeAsk.user:'未知用户名'}}</div>
                     <div class="multi-line" v-html="activeAsk.tag.replace('问题','<br/>问题')"></div>
                 </div>
-
+                <div :style="{height:calcEditHeight}">
+                    <div id="editor">
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="back-list">
             <router-link to="./">
-                <div class="back-item" :style="{width:backItemWidth}">返回主页</div>
+                <div class="back-item" :style="{width:backItemWidth}" v-if="!activeAsk">返回主页</div>
             </router-link>
             <div class="back-item" :style="{width:backItemWidth}" v-if="activeAsk" @click="activeAsk=null">返回列表</div>
+            <div class="back-item" :style="{width:backItemWidth}" v-if="activeAsk" @click="activeAsk=null">提交</div>
         </div>
     </div>
 
 </template>
 
 <script>
-
+    import WangEditor from 'wangeditor'
     export default {
         name: 'StaffBody',
         props: {},
@@ -47,7 +51,9 @@
                 //激活选择
                 activeAsk: null,
                 //返回项宽度
-                backItemWidth: 'calc(100% - 4)'
+                backItemWidth: 'calc(100% - 4)',
+                //item高度
+                itemHeight:0,
             }
         },
         created() {
@@ -309,6 +315,14 @@
                 this.$show.scrollToBottom(this);
                 return height + 'px';
             },
+            //计算编辑器高度
+            calcEditHeight: function () {
+                let height = this.constant.windowHeight - 80-54-20;
+                height -= this.itemHeight;
+                console.log(this.itemHeight)
+                console.log(height)
+                return height + 'px';
+            },
             //显示回到底部状态变更
             scrollBottomUpdate() {
                 return this.constant.showScrollBottom;
@@ -328,6 +342,15 @@
             },
             //激活用户变更
             activeAsk: function (val) {
+                if(val){
+                    this.$nextTick(()=>{
+                        var editor = new WangEditor('#editor');
+                        // 使用 base64 保存图片
+                        editor.customConfig.uploadImgShowBase64 = true;
+                        editor.create();
+                        this.itemHeight = this.$refs.meteItemOnce.offsetHeight;
+                    })
+                }
                 this.backItemWidth = window.innerWidth / (val? 2 : 1) - 4 + 'px';
             },
             activeUserId: function (val) {
@@ -399,5 +422,18 @@
         height: 50px;
         border-radius: 5px;
         cursor: pointer;
+    }
+    #editor{
+        height: 100%;
+    }
+</style>
+<style>
+    #editor .w-e-toolbar{
+        overflow-x: auto;
+    }
+    #editor .w-e-text-container{
+        height: calc(100% - 34px) !important;
+        overflow: auto;
+        background: #FFF;
     }
 </style>
