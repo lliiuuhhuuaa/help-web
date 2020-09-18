@@ -334,7 +334,7 @@
             //中止用户更新
             stopUserIdUpdate(){
                 return this.constant.stopUserId;
-            }
+            },
         },
         watch: {
             //输入框内容变更
@@ -371,7 +371,7 @@
                 if(userIds.indexOf(this.constant.activeUserId)>-1){
                     this.constant.showTool = false;
                 }
-            }
+            },
         },
     }
 </script>

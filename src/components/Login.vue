@@ -72,7 +72,7 @@
                     res = res.data;
                     localStorage.setItem("tk",res.token);
                     this.constant.login = true;
-                    this.$router.push({path:'/'+res.role})
+                    this.$router.push({path:'/'+res.role+"/"})
                 })
             }
         }

@@ -297,6 +297,11 @@
                     this.listHelpMsg(1, id);
                 }
             },
+            //滚动到底部
+            scrollToBottom: function () {
+                this.constant.showScrollBottom = false;
+                this.$show.scrollBottom(this);
+            }
         },
         computed: {
             //待发送更新

@@ -22,9 +22,6 @@
                 constant:this.$store.state,
             }
         },
-        mounted() {
-            this.Emit.$on("appToBottom", this.scrollToBottom)
-        },
         components: {
             Loading,
             StaffHeader,
@@ -34,13 +31,7 @@
             this.constant.login = localStorage.getItem("tk")!=null;
         },
         methods: {
-            //弹出键盘时滚动到底部
-            scrollToBottom: function () {
-                let el = document.getElementById("app");
-                this.$nextTick(() => {
-                    document.documentElement.scrollTop = el.scrollHeight;
-                });
-            },//获取地址栏参数
+            //获取地址栏参数
             getUrlParam: function (name) {
                 // 获取参数
                 var url = window.location.search;

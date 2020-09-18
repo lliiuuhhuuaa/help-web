@@ -296,11 +296,6 @@
                     }
                 });
             },
-            //滚动到底部
-            scrollToBottom: function () {
-                this.constant.showScrollBottom = false;
-                this.$show.scrollBottom(this);
-            }
         },
         computed: {
             //高度计算
