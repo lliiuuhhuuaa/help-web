@@ -1,55 +1,22 @@
 <template>
     <div class="body" :style="{height:calcHeight}">
         <div class="user-body">
-            <div v-if="waitAsk.length>0 && !activeAsk" class="item-body">
-                <div class="mete-item" v-for="item in waitAsk" :key="item.index" @click="activeAsk=item">
-                    <div>用户名:{{item.nickname?item.nickname:item.user?item.user:'未知用户名'}}</div>
-                    <div class="ellipsis" >联系方式:{{item.contact}}</div>
-                    <div class="ellipsis" >问题:{{item.tag}}</div>
-                    <span>提问时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span>
-                </div>
+            <div class="submit-item">
+                <div><span class="title">问题标签</span><input style="width: calc(100% - 100px)" v-model="submitObj.tag" @blur="getSplitKeyword"/>
+                    <span class="notice">下面输入问题的自动回复</span></div>
             </div>
-            <div v-if="activeAsk" style="height: 100%;overflow: auto">
-                <div class="mete-item mete-item-once" ref="meteItemOnce">
-                    <div>用户名:{{activeAsk.nickname?activeAsk.nickname:activeAsk.user?activeAsk.user:'未知用户名'}}</div>
-                    <div class="ellipsis" >联系方式:{{activeAsk.contact}}</div>
-                    <div class="multi-line">问题:{{activeAsk.tag}}</div>
+            <div>
+                <div id="editor-tool" ref="editorTool">
                 </div>
-                <div class="mete-item like-box" v-if="waitAskByLike&&waitAskByLike.length>0" @click="showWaitAskLike=true">
-                    <div>匹配相似提问<span>{{waitAskByLike.length}}</span>条</div>
-                    <div>已选择同时处理提问<span>{{getSelectedWaitAsk}}</span>条</div>
+                <div id="editor" :style="{height:calcEditHeight}" v-html="submitObj.content">
                 </div>
-                <div v-if="activeAsk">
-                    <div id="editor-tool" ref="editorTool">
-                    </div>
-                    <div id="editor" v-if="activeAsk" :style="{height:calcEditHeight}" v-html="submitObj.content">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="like-list-body" v-if="showWaitAskLike && waitAskByLike && waitAskByLike.length>0" @click.self="showWaitAskLike=false">
-            <div class="like-item-body">
-                <div :class="{'selected':item.selected}" class="mete-item" v-for="item in waitAskByLike" :key="item.index" @click="item.selected = !item.selected">
-                    <div>用户名:{{item.nickname?item.nickname:item.user?item.user:'未知用户名'}}</div>
-                    <div class="ellipsis" v-html="item.tag.replace('问题','<br/>问题')"></div>
-                    <span>提问时间:{{new Date(item.createDate).format("yyyy-MM-dd HH:mm:ss")}}</span>
-                </div>
-            </div>
-
-            <div class="back-list">
-                <div class="back-item" style="width:calc(50% - 4px) " @click="state = waitAskByLike[0].selected,waitAskByLike.forEach((e)=>{e.selected=!state})">全选/全不选</div>
-                <div class="back-item" style="width:calc(50% - 4px)" @click="showWaitAskLike=false">返回</div>
             </div>
         </div>
         <div class="submit-body" v-if="submitObj.state">
             <div class="submit-item-body">
                 <div class="submit-item">
-                    <div><span class="title">处理问题</span><input disabled v-model="activeAsk.tag"/>
-                        <span class="notice">正在处理的问题</span></div>
-                </div>
-                <div class="submit-item">
-                    <div><span class="title">处理数量</span><input disabled :value="getSelectedWaitAsk+1+'条'"/>
-                        <span class="notice">包含已选择的相似问题和当前编辑问题</span></div>
+                    <div><span class="title">问题标签</span><input disabled v-model="submitObj.tag"/>
+                        <span class="notice">正在编辑的问题</span></div>
                 </div>
                 <div class="submit-item">
                     <div><span class="title">过期时间</span>
@@ -66,16 +33,14 @@
             </div>
             <div class="back-list">
                 <div class="back-item" style="width:calc(50% - 4px)" @click="submitObj.state=false">上一步</div>
-                <div class="back-item" style="width:calc(50% - 4px) " @click="updateWaitAsk(true)">确认提交</div>
+                <div class="back-item" style="width:calc(50% - 4px) " @click="updateHelpDict">确认提交</div>
             </div>
         </div>
         <div class="back-list">
             <router-link to="./">
-                <div class="back-item" :style="{width:backItemWidth}" v-if="!activeAsk">返回主页</div>
+                <div class="back-item" :style="{width:backItemWidth}">返回主页</div>
             </router-link>
-            <div class="back-item" :style="{width:backItemWidth}" v-if="activeAsk" @click="activeAsk=null,waitAskByLike=null">返回列表</div>
-            <div class="back-item" :style="{width:backItemWidth}" v-if="activeAsk" @click="updateWaitAsk(false)">忽略问题</div>
-            <div class="back-item" :style="{width:backItemWidth}" v-if="activeAsk" @click="submitObj.state = true">下一步</div>
+            <div class="back-item" :style="{width:backItemWidth}" @click="submitObj.state = true">下一步</div>
         </div>
     </div>
 
@@ -102,7 +67,6 @@
                 //帮助过的用户
                 waitAsk: [],
                 //激活选择
-                activeAsk: null,
                 //item高度
                 itemHeight: 0,
                 //富文本
@@ -111,64 +75,77 @@
                 waitAskByLike: [],
                 //显示相似选择框
                 showWaitAskLike : false,
-                submitObj:{content:"",state:false,datetime:null,splitKey:[],classify:''}
+                submitObj:{tag:'',content:"",state:false,datetime:null,splitKey:[],classify:''}
             }
         },
         created() {
             //获取帮助过的用户
-            this.listWaitAsk();
+            this.initEditor();
         },
         methods: {
+            //初始化编辑器
+            initEditor:function(){
+                this.$nextTick(() => {
+                    this.editor = new WangEditor('#editor-tool', '#editor');
+                    // 使用 base64 保存图片
+                    this.editor.customConfig.uploadImgShowBase64 = true;
+                    this.editor.customConfig.menus = [
+                        'head',  // 标题
+                        'bold',  // 粗体
+                        'fontSize',  // 字号
+                        'fontName',  // 字体
+                        'foreColor',  // 文字颜色
+                        'backColor',  // 背景颜色
+                        'italic',  // 斜体
+                        'underline',  // 下划线
+                        'strikeThrough',  // 删除线
+                        'link',  // 插入链接
+                        'list',  // 列表
+                        'justify',  // 对齐方式
+                        'quote',  // 引用
+                        'emoticon',  // 表情
+                        'image',  // 插入图片
+                        'table',  // 表格
+                        'video',  // 插入视频
+                        'code',  // 插入代码
+                        'undo',  // 撤销
+                        'redo'  // 重复
+                    ];
+                    this.editor.create();
+                    this.itemHeight = this.$refs.editorTool.offsetHeight;
+                    //匹配现有词库
+                    // this.getHelpDictByTag();
+                    // //获取词库回复
+                    // this.getSplitKeyword();
+                })
+            },
             //提交
-            updateWaitAsk: function (state) {
-                if (!this.activeAsk) {
+            updateHelpDict: function () {
+                if(this.submitObj.tag===''){
+                    this.$layer.alert("问题标签不能为空", {icon: 0});
                     return;
                 }
-                if(state){
-                    this.submitObj.content = this.editor.txt.html();
-                    if(this.submitObj.content===''){
-                        this.$layer.alert("内容不能为空", {icon: 0});
-                        return;
-                    }
+                if(this.editor.txt.text()===''){
+                    this.$layer.alert("内容不能为空", {icon: 0});
+                    return;
                 }
-                let togetherHandle = [];
-                for (let i = 0; this.waitAskByLike && i < this.waitAskByLike.length; i++) {
-                    if (this.waitAskByLike[i]['selected']) {
-                        togetherHandle.push(this.waitAskByLike[i].id);
-                    }
-                }
+                this.submitObj.content = this.editor.txt.html();
                 let _this = this;
-                this.$layer.confirm(state?"确认提交吗?":'确认要忽略吗?', {icon: 3, title: '最终确认'}, function (index) {
+                this.$layer.confirm("确认提交吗?", {icon: 3, title: '最终确认'}, function (index) {
                     _this.$layer.close(index);
-                    _this.$ajax.post("/wait/ask/updateWaitAsk", {
-                        id: _this.activeAsk.id,
+                    _this.$ajax.post("/help/updateHelpDict", {
+                        tag:_this.submitObj.tag,
                         content: _this.submitObj.content,
                         expiresDate:_this.submitObj.datetime,
                         classify:_this.submitObj.classify,
-                        state:state?1:2,
-                        togetherHandle:togetherHandle
                     }, {
                         animation: _this.constant.Animation.PART,
                         alertError: true,
                         headers:{"Content-Type": 'application/json;charset=utf-8'},
                     }).then(() => {
                         _this.$layer.msg("操作成功");
-                        _this.activeAsk=null;
-                        _this.waitAskByLike=null
-                        _this.submitObj={content:"",state:false,datetime:null,splitKey:[],classify:''}
-                        _this.listWaitAsk();
+                        _this.submitObj={tag:'',content:"",state:false,datetime:null,splitKey:[],classify:''}
                     });
-                });
-            },
-            //获取离线待处理提问
-            listWaitAsk: function () {
-                this.$ajax.post("/wait/ask/listWaitAsk", {state:0}, {
-                    animation: this.constant.Animation.PART,
-                    alertError: true
-                }).then((data) => {
-                    data = data.data;
-                    this.waitAsk = data.rows;
-                    this.listMerchantUser();
                 });
             },
             //获取帮助过的用户
@@ -201,7 +178,7 @@
             },
             //获取词库回复
             getHelpDictByTag: function () {
-                this.$ajax.post("/help/getHelpDictByTag", {tag: this.activeAsk.tag}).then((data) => {
+                this.$ajax.post("/help/getHelpDictByTag", {tag: this.submitObj.tag}).then((data) => {
                     if (!data.data) {
                         return;
                     }
@@ -213,33 +190,17 @@
             },
             //获取词库回复
             getSplitKeyword: function () {
-                this.$ajax.post("/help/getSplitKeyword", {text: this.activeAsk.tag}).then((data) => {
+                if(!this.submitObj.tag||this.submitObj.prevTag === this.submitObj.tag){
+                    return;
+                }
+                this.$ajax.post("/help/getSplitKeyword", {text: this.submitObj.tag}).then((data) => {
                     if (!data.data) {
                         return;
                     }
+                    this.submitObj.prevTag = this.submitObj.tag;
                     this.submitObj.splitKey = data.data;
                 });
             },
-            //获取词库回复
-            listWaitAskByLike: function () {
-                this.$ajax.post("/wait/ask/listWaitAskByLike", {id: this.activeAsk.id}).then((data) => {
-                    if (!data.data || data.data.length < 1) {
-                        return;
-                    }
-                    data = data.data;
-                    for (let dataKey in data) {
-                        data[dataKey]['selected'] = false;
-                    }
-                    this.waitAskByLike = data;
-                    this.$layer.msg("匹配到相似提问,可以选择一同处理");
-                });
-            },
-            //ESC事件
-            keyEscEvent:function (e) {
-                if(e.code==="Escape"){
-                    this.showWaitAskLike = false;
-                }
-            }
         },
         computed: {
             //高度计算
@@ -254,86 +215,26 @@
                 return height + 'px';
             },
             backItemWidth: function () {
-                return this.constant.windowSize.width / (this.activeAsk ? 3 : 1) - 4 + 'px';
-            },
-            //对话用户激活变更
-            activeUserId() {
-                return this.constant.activeUserId;
+                return this.constant.windowSize.width / 2 - 4 + 'px';
             },
             //窗口大小变更
             windowSizeChange() {
                 return this.constant.windowSize;
             },
-            //获取已选择数量
-            getSelectedWaitAsk() {
-                if (!this.waitAskByLike || this.waitAskByLike.length < 1) {
-                    return 0;
-                }
-                let count = 0;
-                for (let i = 0; i < this.waitAskByLike.length; i++) {
-                    if (this.waitAskByLike[i]['selected']) {
-                        count++;
-                    }
-                }
-                return count;
-            }
+            //对话用户激活变更
+            activeUserId() {
+                return this.constant.activeUserId;
+            },
         },
         watch: {
             //窗口大小变更
             windowSizeChange: function () {
                 this.itemHeight = this.$refs.editorTool.offsetHeight;
             },
-            //激活用户变更
-            activeAsk: function (val) {
-                if (val) {
-                    this.$nextTick(() => {
-                        this.editor = new WangEditor('#editor-tool', '#editor');
-                        // 使用 base64 保存图片
-                        this.editor.customConfig.uploadImgShowBase64 = true;
-                        this.editor.customConfig.menus = [
-                            'head',  // 标题
-                            'bold',  // 粗体
-                            'fontSize',  // 字号
-                            'fontName',  // 字体
-                            'foreColor',  // 文字颜色
-                            'backColor',  // 背景颜色
-                            'italic',  // 斜体
-                            'underline',  // 下划线
-                            'strikeThrough',  // 删除线
-                            'link',  // 插入链接
-                            'list',  // 列表
-                            'justify',  // 对齐方式
-                            'quote',  // 引用
-                            'emoticon',  // 表情
-                            'image',  // 插入图片
-                            'table',  // 表格
-                            'video',  // 插入视频
-                            'code',  // 插入代码
-                            'undo',  // 撤销
-                            'redo'  // 重复
-                        ];
-                        this.editor.create();
-                        this.itemHeight = this.$refs.editorTool.offsetHeight;
-                        //匹配现有词库
-                        this.getHelpDictByTag();
-                        //匹配相似提问
-                        this.listWaitAskByLike();
-                        //获取词库回复
-                        this.getSplitKeyword();
-                    })
-                }
-            },
             activeUserId: function (val) {
                 if (val > 0) {
                     this.$router.push("./");
                 }
-            },
-            showWaitAskLike: function (val) {
-                if(!val){
-                    document.removeEventListener("keyup",this.keyEscEvent);
-                    return;
-                }
-                document.addEventListener("keyup",this.keyEscEvent);
             },
         }
     }

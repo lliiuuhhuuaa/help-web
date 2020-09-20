@@ -81,7 +81,7 @@ const store = new Vuex.Store({
         //客服信息
         staffInfo: null,
         //窗口高度
-        windowHeight:window.innerHeight,
+        windowSize:{height:window.innerHeight,width:window.innerWidth},
         //socket延迟
         socketDelay:null,
         //未读标记

@@ -1,6 +1,6 @@
 import axios from 'axios'
 import store from './store';
-
+import qs from 'qs'
 //基础地址
 axios.defaults.baseURL = store.state.serviceUrl;
 //超时时间
@@ -33,15 +33,7 @@ axios.interceptors.request.use(config => {
     if (!contentType||contentType.indexOf("application/x-www-form-urlencoded")>-1) {
         // 配置content-Type
         config.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        let ret = "";
-        let data = config.data;
-        for (let dataKey in data) {
-            if (ret !== "") {
-                ret += "&";
-            }
-            ret += dataKey + "=" + data[dataKey];
-        }
-        config.data = ret;
+        config.data = qs.stringify(config.data);
     }
     if(config.animation===store.state.Animation.ALL){
         store.commit("updateState", {loading: true});
@@ -58,7 +50,7 @@ axios.interceptors.request.use(config => {
     // 关闭loading
    // store.commit("updateState", {loading: false});
     store.state.layer.msg("网络繁忙,请稍候重试");
-    return new Promise(() => {error});
+    return new Promise(() => {console.log(error)});
 });
 
 // 接收

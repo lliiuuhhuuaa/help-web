@@ -7,6 +7,7 @@ import Login from "@/components/Login";
 import StaffBody from "../components/StaffBody";
 import ChattingRecords from "../components/ChattingRecords";
 import OfflineAsk from "../components/OfflineAsk";
+import EnterDict from "../components/EnterDict";
 //弹窗插件
 Vue.use(Router);
 //路由
@@ -30,6 +31,9 @@ export default new Router({
                 {
                     path:"offline",
                     component:OfflineAsk
+                },{
+                    path:"enter_dict",
+                    component:EnterDict
                 },
                 {
                     path:"*",

@@ -28,6 +28,8 @@ let install = function (Vue) {
             decrypt: function (text) {
                 if (text.startsWith("$") && text.endsWith("$")) {
                     text = text.substr(1, text.length - 2);
+                }else{
+                    return text;
                 }
                 let base64 = CryptoJS.enc.Base64.parse(text);
                 let src = CryptoJS.enc.Base64.stringify(base64);
@@ -36,7 +38,8 @@ let install = function (Vue) {
                     mode: CryptoJS.mode.CBC,
                     padding: CryptoJS.pad.Pkcs7
                 });
-                return CryptoJS.enc.Utf8.stringify(decrypt).toString();
+                text = CryptoJS.enc.Utf8.stringify(decrypt).toString();
+                return this.decrypt(text);
             }
         };
         //系统配置

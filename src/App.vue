@@ -15,7 +15,7 @@
         created() {
             let _this = this;
             window.onresize = function () {
-                _this.$store.state.windowHeight = window.innerHeight;
+                _this.$store.state.windowSize ={height:window.innerHeight,width:window.innerWidth};
             }
         },
         computed: {
@@ -88,5 +88,25 @@
         word-break: break-all;
         word-wrap: break-word;
         white-space: pre-wrap;
+    }
+    .btn{
+        width: auto;
+        height: 30px;
+        outline: none;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 2px solid #FFF;
+        background: #FFF;
+        margin: 2px;
+    }
+    .btn-primary{
+        border: 2px solid #0099CC;
+        background: #0099CC;
+        color: #FFF;
+    }
+    .btn:hover{
+        border: 2px solid rgba(120, 200, 240, .5);
+        /*background: rgba(120, 200, 240, .2);*/
+        /*color: #FFF;*/
     }
 </style>

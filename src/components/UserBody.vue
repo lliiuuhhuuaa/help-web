@@ -422,7 +422,7 @@
                 if (res.storageType === this.constant.StorageType.FILE) {
                     this.$ajax.get("/other/file/getGeneralFile/" + res.reply, {}).then(res => {
                         reply['type'] = 'html';
-                        reply.tag = res;
+                        reply.tag = this.$aes.decrypt(res);
                     });
                     return;
                 }
@@ -574,7 +574,7 @@
             },
             //高度计算
             calcHeight: function () {
-                let height = this.constant.windowHeight - 100;
+                let height = this.constant.windowSize.height - 100;
                 if (!this.hideHeader) {
                     height -= 50;
                 }

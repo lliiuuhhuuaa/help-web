@@ -2,7 +2,7 @@
     <div class="body" :style="{height:calcHeight}">
         <div class="no-user-body" v-if="constant.activeUserId<1">
             <router-link to="offline"><div class="mete-item handle"><i></i><b>处理离线问题</b></div></router-link>
-            <div class="mete-item entering"><i></i><b>录入帮助词库</b></div>
+            <router-link to="enter_dict"><div class="mete-item entering"><i></i><b>录入帮助词库</b></div></router-link>
             <router-link to="records"><div class="mete-item record"><i></i><b>查看聊天记录</b></div></router-link>
             <div class="mete-item exit" @click="exit"><i></i><b>退出登陆</b></div>
         </div>
@@ -314,7 +314,7 @@
             },
             //高度计算
             calcHeight: function () {
-                let height = this.constant.windowHeight - 80;
+                let height = this.constant.windowSize.height - 80;
                 if (this.constant.showTool) {
                     height -= 60;
                 }

@@ -232,7 +232,7 @@
         computed: {
             //高度计算
             calcHeight: function () {
-                let height = this.constant.windowHeight - 80;
+                let height = this.constant.windowSize.height - 80;
                 if (this.constant.showTool) {
                     height -= 60;
                 }
