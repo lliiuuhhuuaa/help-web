@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>纯css实现弹窗</title>
+
+</head>
+
+<body>
+
+
+<!--<button class="btn-item sure-btn">确认</button>
+            <button class="btn-item cancel-btn">取消</button>-->
+<script>
+    let alertContent = "<input type=\"checkbox\" style=\"display: none\" class=\"modal-controller\"><label class=\"overlay\"></label><div class=\"alert-body\"><div class=\"title\"><span class=\"close\">✕</span></div><div class=\"content info\"></div><div class=\"btn-group\"></div></div>";
+    let install = function (Vue) {
+        if(!document.getElementById("alert-style")){
+            let styleContent = ".alert-modal>input~*{overflow:hidden;max-height:0;opacity:0}.alert-modal .overlay{top:0;left:0;bottom:0;right:0;position:fixed;margin:0;border-radius:0;background:rgba(17,17,17,0.6);transition:all .3s;z-index:100000}.alert-modal .overlay~*{border:0;position:fixed;top:50%;left:50%;transform:translateX(-50%) translateY(-50%) scale(0.2,0.2);z-index:1000000;transition:all .3s ease}.alert-modal>input:checked~*{display:block;opacity:1;max-height:10000px}.alert-modal>input:checked~.overlay~*{max-height:90%;overflow:auto;-webkit-transform:translateX(-50%) translateY(-50%) scale(1,1);transform:translateX(-50%) translateY(-50%) scale(1,1)}.alert-body{background:#FFF;border-radius:10px;width:300px}.alert-body .title{padding:10px;text-align:center;border-bottom:1px solid #DDD;height:30px}.alert-body .title .close{float:right;font-weight:bold;font-size:20px;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;-o-user-select:none;user-select:none}.alert-body .title .close:hover{color:#D00}.alert-body .content-body{margin:10px;padding:20px;position:relative;text-align:center}.alert-body .content-body{text-align:left;background-size:45px 45px;background-repeat:no-repeat;background-position-x:30px;background-position-y:center}.alert-body .content-body.error{padding-left:90px;background-image:url(\"data:image/svg+xml;charset=utf-8,%3Csvgt='1600608976104'class='icon'viewBox='0010241024'version='1.1'xmlns='http://www.w3.org/2000/svg'p-id='3538'width='16'height='16'%3E%3Cpathd='M5120a512512000-512512512512000512512512512000512-512512512000-512-512z'fill='%23FD6B6D'p-id='3539'data-spm-anchor-id='a313x.7781069.0.i0'class=''%3E%3C/path%3E%3Cpathd='M513.755429565.540571L359.277714720.018286a39.05828639.058286001-55.296-0.07314339.27771439.2777140010.073143-55.442286l154.331429-154.331428-155.062857-155.136a36.57142936.57142900151.712-51.785143l365.714285365.714285a36.57142936.571429011-51.78514351.785143L513.755429565.540571zm157.549714-262.582857a35.25485735.25485701149.73714349.737143l-106.057143108.982857a35.25485735.254857011-49.883429-49.810285l106.203429-108.982858z'fill='%23FFFFFF'p-id='3540'%3E%3C/path%3E%3C/svg%3E\")}.alert-body .content-body.warn{padding-left:90px;background-image:url(\"data:image/svg+xml;charset=utf-8,%3Csvgt='1600691073270'class='icon'viewBox='0010241024'version='1.1'xmlns='http://www.w3.org/2000/svg'p-id='6206'xmlns:xlink='http://www.w3.org/1999/xlink'width='16'height='16'%3E%3Cdefs%3E%3Cstyletype='text/css'%3E%40font-face%7Bfont-family:element-icons%3Bsrc:url('chrome-extension://moombeodfomdpjnpocobemoiaemednkg/fonts/element-icons.woff')format('woff')%2Curl('chrome-extension://moombeodfomdpjnpocobemoiaemednkg/fonts/element-icons.ttf')format('truetype')%3B%7D%3C/style%3E%3C/defs%3E%3Cpathd='M5120C230.400230.40512s230.4512512512512-230.4512-512S793.605120zM512877.714286c-40.2285710-73.142857-32.914286-73.142857-73.142857s32.914286-73.14285773.142857-73.14285773.14285732.91428673.14285773.142857S552.228571877.714286512877.714286zM585.142857512c040.228571-32.91428673.142857-73.14285773.142857s-73.142857-32.914286-73.142857-73.142857L438.857143219.428571c0-40.22857132.914286-73.14285773.142857-73.142857s73.14285732.91428673.14285773.142857L585.142857512z'p-id='6207'fill='%23F4D671'%3E%3C/path%3E%3C/svg%3E\")}.alert-body .content-body.info{padding-left:90px;background-image:url(\"data:image/svg+xml;charset=utf-8,%3Csvgt='1600691617737'class='icon'viewBox='0010241024'version='1.1'xmlns='http://www.w3.org/2000/svg'p-id='7970'xmlns:xlink='http://www.w3.org/1999/xlink'width='16'height='16'%3E%3Cdefs%3E%3Cstyletype='text/css'%3E%40font-face%7Bfont-family:element-icons%3Bsrc:url('chrome-extension://moombeodfomdpjnpocobemoiaemednkg/fonts/element-icons.woff')format('woff')%2Curl('chrome-extension://moombeodfomdpjnpocobemoiaemednkg/fonts/element-icons.ttf')format('truetype')%3B%7D%3C/style%3E%3C/defs%3E%3Cpathd='M51264.7C264.964.764.7264.964.7512S264.9959.3512959.3c247.10447.3-200.3447.3-447.3S759.164.751264.7zm64699.6c035.1-28.863.9-63.963.9s-63.9-28.8-63.9-63.9V508.7c0-35.128.8-63.963.9-63.9s63.928.863.963.9v255.6zm-63.9-440.8c-35.30-63.9-28.6-63.9-63.9s28.6-63.963.9-63.963.928.663.963.9-28.663.9-63.963.9z'p-id='7971'fill='%238a8a8a'%3E%3C/path%3E%3C/svg%3E\")}.alert-body .btn-group{text-align:center;margin-bottom:20px}.alert-body .btn-group .btn-item{padding:10px;width:100px;height:40px;outline:0;cursor:pointer;background:#09c;color:#FFF;border:2px solid #FFF;border-radius:5px;-webkit-user-select:none;-moz-user-select:none;-o-user-select:none;user-select:none}";
+            let style = document.createElement("style");
+            try{
+                style.appendChild(document.createTextNode(styleContent));
+            }catch(ex){
+                style.styleSheet.cssText = styleContent;//针对IE
+            }
+            document.getElementsByTagName("head")[0].appendChild(style);
+        }
+        /***
+         * 弹窗
+         */
+        Vue.alert = {
+            /**
+             * 弹错误
+             * @param text
+             */
+            error: function (text) {
+                let node = document.createElement("div");
+                node.classList.add("alert-modal");
+                node.innerHTML = alertContent;
+                node.getElementsByClassName("title")[0].innerHTML="提示";
+                node.getElementsByClassName("content")[0].innerHTML=text;
+                document.getElementsByTagName("body")[0].append(node);
+                node.getElementsByClassName("modal-controller")[0].setAttribute('checked','checked');
+            }
+        }
+    }
+    // let i = 0;
+    // document.addEventListener("keyup",()=>{
+    //     if(i===0){
+    //         document.getElementById('modal-controller').setAttribute('checked','checked')
+    //         i=1;
+    //     }else{
+    //         document.getElementById('modal-controller').removeAttribute('checked')
+    //         i=0;
+    //     }
+    //
+    // })
+</script>
+</body>
+
+</html>
