@@ -122,17 +122,17 @@
             //提交
             updateHelpDict: function () {
                 if(this.submitObj.tag===''){
-                    this.$layer.alert("问题标签不能为空", {icon: 0});
+                    this.$dialog.error("问题标签不能为空");
                     return;
                 }
                 if(this.editor.txt.text()===''){
-                    this.$layer.alert("内容不能为空", {icon: 0});
+                    this.$dialog.error("内容不能为空");
                     return;
                 }
                 this.submitObj.content = this.editor.txt.html();
                 let _this = this;
-                this.$layer.confirm("确认提交吗?", {icon: 3, title: '最终确认'}, function (index) {
-                    _this.$layer.close(index);
+                this.$dialog.confirm("确认提交吗?", {title: '最终确认'}, function (index) {
+                    _this.$dialog.close(index);
                     _this.$ajax.post("/help/updateHelpDict", {
                         tag:_this.submitObj.tag,
                         content: _this.submitObj.content,
@@ -143,7 +143,7 @@
                         alertError: true,
                         headers:{"Content-Type": 'application/json;charset=utf-8'},
                     }).then(() => {
-                        _this.$layer.msg("操作成功");
+                        _this.$dialog.msg("操作成功");
                         _this.submitObj={tag:'',content:"",state:false,datetime:null,splitKey:[],classify:''}
                     });
                 });
@@ -184,7 +184,7 @@
                     }
                     if(!this.editor.txt.text()){
                         this.editor.txt.html(this.$aes.decrypt(data.data.reply));
-                        this.$layer.msg("匹配到在词库中存在相似的问题,已自动填写");
+                        this.$dialog.msg("匹配到在词库中存在相似的问题,已自动填写");
                     }
                 });
             },
@@ -205,12 +205,12 @@
         computed: {
             //高度计算
             calcHeight: function () {
-                let height = this.constant.windowSize.height - 80;
+                let height = this.constant.windowSize.height - 85;
                 return height + 'px';
             },
             //计算编辑器高度
             calcEditHeight: function () {
-                let height = this.constant.windowSize.height - 80 - 54;
+                let height = this.constant.windowSize.height - 85 - 54;
                 height -= this.itemHeight;
                 return height + 'px';
             },

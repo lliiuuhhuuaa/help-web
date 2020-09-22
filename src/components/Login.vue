@@ -58,7 +58,7 @@
             },
             login:function(){
                 if(this.username===''||this.password===''){
-                    this.$layer.msg("请输入账号和密码");
+                    this.$dialog.msg("请输入账号和密码");
                     return;
                 }
                 if(this.save){

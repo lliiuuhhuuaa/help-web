@@ -127,7 +127,7 @@
                 if(state){
                     this.submitObj.content = this.editor.txt.html();
                     if(this.submitObj.content===''){
-                        this.$layer.alert("内容不能为空", {icon: 0});
+                        this.$dialog.error("内容不能为空");
                         return;
                     }
                 }
@@ -138,8 +138,8 @@
                     }
                 }
                 let _this = this;
-                this.$layer.confirm(state?"确认提交吗?":'确认要忽略吗?', {icon: 3, title: '最终确认'}, function (index) {
-                    _this.$layer.close(index);
+                this.$dialog.confirm(state?"确认提交吗?":'确认要忽略吗?', {title: '最终确认'}, function (index) {
+                    _this.$dialog.close(index);
                     _this.$ajax.post("/wait/ask/updateWaitAsk", {
                         id: _this.activeAsk.id,
                         content: _this.submitObj.content,
@@ -152,7 +152,7 @@
                         alertError: true,
                         headers:{"Content-Type": 'application/json;charset=utf-8'},
                     }).then(() => {
-                        _this.$layer.msg("操作成功");
+                        _this.$dialog.msg("操作成功");
                         _this.activeAsk=null;
                         _this.waitAskByLike=null
                         _this.submitObj={content:"",state:false,datetime:null,splitKey:[],classify:''}
@@ -207,7 +207,7 @@
                     }
                     if(!this.editor.txt.text()){
                         this.editor.txt.html(this.$aes.decrypt(data.data.reply));
-                        this.$layer.msg("匹配到在词库中存在相似的问题,已自动填写");
+                        this.$dialog.msg("匹配到在词库中存在相似的问题,已自动填写");
                     }
                 });
             },
@@ -231,7 +231,7 @@
                         data[dataKey]['selected'] = false;
                     }
                     this.waitAskByLike = data;
-                    this.$layer.msg("匹配到相似提问,可以选择一同处理");
+                    this.$dialog.msg("匹配到相似提问,可以选择一同处理");
                 });
             },
             //ESC事件
@@ -244,12 +244,12 @@
         computed: {
             //高度计算
             calcHeight: function () {
-                let height = this.constant.windowSize.height - 80;
+                let height = this.constant.windowSize.height - 85;
                 return height + 'px';
             },
             //计算编辑器高度
             calcEditHeight: function () {
-                let height = this.constant.windowSize.height - 80 - 54;
+                let height = this.constant.windowSize.height - 85 - 54;
                 height -= this.itemHeight;
                 return height + 'px';
             },

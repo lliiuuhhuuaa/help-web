@@ -119,7 +119,7 @@
                     return;
                 }
                 if (file.size > 1024 * 1024) {
-                    this.$layer.alert("图片最大1M", {icon: 0});
+                    this.$dialog.error("图片最大1M");
                     return;
                 }
                 let obj = null;
@@ -169,7 +169,7 @@
                 }
                 let type = file.type ? file.type : 'application/' + file.name.substr(file.name.lastIndexOf(".") + 1);
                 if (file.size > 1024 * 10240) {
-                    this.$layer.alert("文件最大支持10M", {icon: 0});
+                    this.$dialog.error("文件最大支持10M");
                     return;
                 }
                 //请求上传凭证
@@ -226,7 +226,7 @@
                 }
                 let time = +new Date();
                 if (this.prevSendTime + 1000 > time) {
-                    this.$layer.msg("发送太频繁了");
+                    this.$dialog.msg("发送太频繁了");
                     return;
                 }
                 this.prevSendTime = time;
@@ -247,7 +247,7 @@
             sendEmojiMsg: function (index) {
                 let time = +new Date();
                 if (this.prevSendTime + 1000 > time) {
-                    this.$layer.msg("发送太频繁了");
+                    this.$dialog.msg("发送太频繁了");
                     return;
                 }
                 this.prevSendTime = time;
@@ -258,7 +258,7 @@
             sendQuickMsg: function (item) {
                 let time = +new Date();
                 if (this.prevSendTime + 1000 > time) {
-                    this.$layer.msg("发送太频繁了");
+                    this.$dialog.msg("发送太频繁了");
                     return;
                 }
                 this.prevSendTime = time;
@@ -302,7 +302,7 @@
                     }
                 }
                 let _this = this;
-                _this.$layer.confirm('是否确认中止会话?', {icon: 3, title: '中止会话'}, function (index) {
+                _this.$dialog.confirm('是否确认中止会话?', {title: '中止会话'}, function (index) {
                     _this.$ajax.post(_this.staff?"/staff/online/stopChat":"/web/staff/online/stopChat", {userId:userId}, {
                         animation: _this.constant.Animation.PART,
                         alertError: true
@@ -314,7 +314,7 @@
                             _this.constant.staffState = false ;
                         }
                     });
-                    _this.$layer.close(index);
+                    _this.$dialog.close(index);
                 });
             },
             //获取表情包地址
