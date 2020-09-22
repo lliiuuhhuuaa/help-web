@@ -28,12 +28,127 @@
         /***
          * 弹窗
          */
-        Vue.alert = {
+        Vue.dialog = {
             /**
-             * 弹错误
+             * 错误弹框
              * @param text
              */
             error: function (text, param) {
+                if (typeof (text) === 'string') {
+                    text = {'content': text}
+                    param = text;
+                }
+                //标题
+                param.title = param.title || "错误提示";
+                //取消按钮文字
+                param.cancelBtnText = param.cancelBtnText || "我知道了";
+                //是否可以点击背景关闭,默认false
+                param.bgClose = param.bgClose || false;
+                //是否只可以开一个,默认false
+                param.single = param.single || false;
+                //当single为true时与update为true时，将更新原有对象
+                param.update = param.update || false;
+                //显示图标,默认error
+                param.icon = 'error';
+                this.alert(text,param);
+            },
+            /**
+             * 警告弹框
+             * @param text
+             */
+            warn: function (text, param) {
+                if (typeof (text) === 'string') {
+                    text = {'content': text}
+                    param = text;
+                }
+                //标题
+                param.title = param.title || "警告提示";
+                //取消按钮文字
+                param.cancelBtnText = param.cancelBtnText || "我知道了";
+                //是否可以点击背景关闭,默认false
+                param.bgClose = param.bgClose || false;
+                //是否只可以开一个,默认false
+                param.single = param.single || false;
+                //当single为true时与update为true时，将更新原有对象
+                param.update = param.update || false;
+                //显示图标,默认warn
+                param.icon = 'warn';
+                this.alert(text,param);
+            },
+            /**
+             * 弹框
+             * @param text
+             */
+            info: function (text, param) {
+                if (typeof (text) === 'string') {
+                    text = {'content': text}
+                    param = text;
+                }
+                //标题
+                param.title = param.title || "提示";
+                //取消按钮文字
+                param.cancelBtnText = param.cancelBtnText || "我知道了";
+                //是否可以点击背景关闭,默认false
+                param.bgClose = param.bgClose || false;
+                //是否只可以开一个,默认false
+                param.single = param.single || false;
+                //当single为true时与update为true时，将更新原有对象
+                param.update = param.update || false;
+                //显示图标,默认info
+                param.icon = 'info';
+                this.alert(text,param);
+            },
+            /**
+             * msg弹框
+             * @param text
+             */
+            msg: function (text, param) {
+                if (typeof (text) === 'string') {
+                    text = {'content': text}
+                    param = text;
+                }
+                //标题
+                param.title = param.title || "提示";
+                //是否可以点击背景关闭,默认false
+                param.bgClose = param.bgClose || false;
+                //是否只可以开一个,默认false
+                param.single = param.single || false;
+                //当single为true时与update为true时，将更新原有对象
+                param.update = param.update || false;
+                //显示图标,默认info
+                param.icon = null;
+                //延迟关闭
+                param.time = param.time||5000;
+                this.alert(text,param);
+            },
+            /**
+             * 弹框
+             * @param text
+             */
+            confirm: function (text, param,callback) {
+                if (typeof (text) === 'string') {
+                    text = {'content': text}
+                    param = text;
+                }
+                //标题
+                param.title = param.title || "提示";
+                //取消按钮文字
+                param.cancelBtnText = param.cancelBtnText || "我知道了";
+                //是否可以点击背景关闭,默认false
+                param.bgClose = param.bgClose || false;
+                //是否只可以开一个,默认false
+                param.single = param.single || false;
+                //当single为true时与update为true时，将更新原有对象
+                param.update = param.update || false;
+                //显示图标,默认info
+                param.icon = 'info';
+                this.alert(text,param);
+            },
+            /**
+             * 弹框
+             * @param text
+             */
+            alert: function (text, param) {
                 if (!text && !param) {
                     console.error("缺少弹窗内容(1)");
                     return;
