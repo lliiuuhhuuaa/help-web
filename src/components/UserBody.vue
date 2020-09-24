@@ -36,9 +36,10 @@
                 <div v-else-if="item.class===MsgClass.ADVERTISING">
                     <div class="advertising-img" v-if="item.data.img"><img v-bind:src="item.data.img"></div>
                     <div class="advertising-body">
-                        <div class="advertising-title">
+                        <div class="advertising-title horizontal-scrolling"  @mousedown.self="$show.horizontalScrolling($event,50)">
                             <div v-for="(it,index) in item.data.content" v-bind:key="it.classify"
                                  @click="switchList(index)"
+                                 @mousedown.prevent="$show.horizontalScrolling($event,50)"
                                  v-bind:class="{'active':advertising[advertisingIndex].classify===it.classify}">
                                 {{it.classify}}
                             </div>

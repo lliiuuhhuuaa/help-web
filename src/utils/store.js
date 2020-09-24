@@ -4,6 +4,7 @@ Vue.use(Vuex);
 const store = new Vuex.Store({
     state: {
         serviceUrl:"/help/api",
+        ossUrl: process.env.NODE_ENV==='development'?"https://al.lliiuuhhuuaa.cn/web/help":"",
         loading: true,
         loadingNoBack: false,
         login:false,

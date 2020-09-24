@@ -16,7 +16,8 @@ module.exports = {
                 accessKeySecret: Oss.accessKeySecret,
                 bucket: Oss.bucket,
                 // putACL: 'public-read', // **webpack-ali-oss-upload 新增参数 设置oss上传文件读写权限**
-                // test: true,
+                //测试，仅显示要上传的文件，但是不执行上传操作。默认false
+                test: process.env.NODE_ENV==='development',
                 setOssPath: filePath => {
                     // some operations to filePath
                     let index = filePath.lastIndexOf("dist");
