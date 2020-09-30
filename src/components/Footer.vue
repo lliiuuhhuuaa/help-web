@@ -319,8 +319,7 @@
             },
             //获取表情包地址
             getEmojiUrl:function(index){
-                //this.constant.ossUrl+
-                return require('@/assets/img/face/'+index+'.jpeg');
+                return '/images/face/'+index+'.jpeg';
             }
         },
         computed: {
